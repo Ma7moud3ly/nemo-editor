@@ -1,0 +1,131 @@
+default_platform(:android)
+require "fileutils"
+require "base64"
+require "zip"
+
+# ---------- Helpers ----------
+def gradlew(*tasks)
+  root = File.expand_path("..", __dir__)   # parent of fastlane/
+  wrapper = Gem.win_platform? ? "gradlew.bat" : "./gradlew"
+
+  Dir.chdir(root) do
+    unless Gem.win_platform?
+      sh("chmod +x gradlew")  # ensure permission on Linux/macOS
+    end
+    sh([wrapper, *tasks])
+  end
+end
+
+
+def zip_directory(input_dir, output_file)
+  entries = Dir.entries(input_dir) - %w[. ..]
+  ::Zip::File.open(output_file, ::Zip::File::CREATE) do |zipfile|
+    entries.each do |entry|
+      path = File.join(input_dir, entry)
+      if File.directory?(path)
+        Dir[File.join(path, '**', '**')].each do |file|
+          zipfile.add(file.sub("#{input_dir}/", ''), file)
+        end
+      else
+        zipfile.add(entry, path)
+      end
+    end
+  end
+end
+
+# ---------- Common Setup ----------
+lane :setup_env do
+  if ENV["DEBUG_KEYSTORE_BASE64"].to_s != ""
+    FileUtils.mkdir_p("../keys")
+    File.open("../keys/debug.keystore", "wb") do |f|
+      f.write(Base64.decode64(ENV["DEBUG_KEYSTORE_BASE64"]))
+    end
+    UI.success("debug.keystore created at keys/debug.keystore")
+  else
+    UI.important("DEBUG_KEYSTORE_BASE64 not provided, skipping keystore.")
+  end
+  
+  if ENV["RELEASE_KEYSTORE_BASE64"].to_s != ""
+      FileUtils.mkdir_p("../keys")
+      File.open("../keys/release.keystore", "wb") do |f|
+        f.write(Base64.decode64(ENV["RELEASE_KEYSTORE_BASE64"]))
+      end
+      UI.success("release.keystore created at keys/release.keystore")
+    else
+      UI.important("RELEASE_KEYSTORE_BASE64 not provided, skipping keystore.")
+    end
+  
+
+  if ENV["LOCAL_PROPERTIES"].to_s != ""
+    File.write("../local.properties", ENV["LOCAL_PROPERTIES"])
+    UI.success("local.properties created")
+  else
+    UI.important("LOCAL_PROPERTIES not provided, skipping local.properties.")
+  end
+end
+
+# ---------- Android ----------
+platform :android do
+  desc "Build APK (debug on branch, release on tag)"
+  lane :build_apk do
+    setup_env
+    is_tag = ENV["GITHUB_REF"].to_s.start_with?("refs/tags/")
+    gradle_task = is_tag ? "assembleDefaultRelease" : "assembleDefaultDebug"
+    gradlew gradle_task
+
+    version = ENV["GITHUB_REF_NAME"] || "dev"
+    apk_file = if is_tag
+                 Dir["../composeApp/build/outputs/apk/default/release/*.apk"].first
+               else
+                 Dir["../composeApp/build/outputs/apk/default/debug/*.apk"].first
+               end
+    UI.user_error!("APK not found at expected path") if apk_file.nil?
+
+    new_name = "../nemo-editor-#{version}.apk"
+    FileUtils.cp(apk_file, new_name)
+    UI.success("Renamed APK to #{new_name}")
+  end
+end
+
+# ---------- Desktop ----------
+platform :desktop do
+  desc "Build Linux desktop binary"
+  lane :linux do
+    setup_env
+    gradlew ":composeApp:packageReleaseDeb"
+    UI.success("✅ Linux .deb built")
+  end
+
+  desc "Build Windows desktop binary"
+  lane :windows do
+    setup_env
+    gradlew ":composeApp:packageReleaseExe"
+    UI.success("✅ Windows .exe built")
+  end
+
+  desc "Build macOS desktop binary"
+  lane :macos do
+    setup_env
+    gradlew ":composeApp:packageReleaseDmg"
+    UI.success("✅ macOS .dmg built")
+  end
+end
+
+# ---------- WASM ----------
+platform :wasm do
+  desc "Build wasm/js bundle"
+  lane :build do
+    setup_env
+    gradlew("wasmJsBrowserDistribution")
+
+    wasm_dir = "../composeApp/build/dist/wasmJs/productionExecutable"
+    zip_file = "../composeApp/build/wasm-dist.zip"
+    FileUtils.rm_f(zip_file)
+    zip_directory(wasm_dir, zip_file)
+
+    version = ENV["GITHUB_REF_NAME"] || "dev"
+    final_name = "../nemo-editor-#{version}.zip"
+    FileUtils.mv(zip_file, final_name)
+    UI.success("✅ Renamed WASM bundle to #{final_name}")
+  end
+end
