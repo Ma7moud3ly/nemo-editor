@@ -7,6 +7,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontFamily
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -42,3 +43,5 @@ actual fun ConfigureSystemBars(
 
 actual fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
+@Composable
+actual fun emojiFontFontFamily(): FontFamily? = null

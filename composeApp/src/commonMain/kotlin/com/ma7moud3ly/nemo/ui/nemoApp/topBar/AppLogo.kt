@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -29,9 +30,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ma7moud3ly.nemo.platform.emojiFontFontFamily
 import com.ma7moud3ly.nemo.themes.EditorThemes
 import com.ma7moud3ly.nemo.themes.AppTheme
-import com.ma7moud3ly.nemo.themes.emojiFontFontFamily
+import nemoeditor.composeapp.generated.resources.Res
+import nemoeditor.composeapp.generated.resources.logo_flipped
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Preview
@@ -176,13 +180,11 @@ internal fun NemoAnimatedLogo(
             )
 
             // Swimming Fish (Nemo!) - swims beyond box edges
-            Text(
-                text = "🐠",
-                fontSize = 20.sp,
-                fontFamily = emojiFontFontFamily(),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary,
+            Image(
+                painter = painterResource(Res.drawable.logo_flipped),
+                contentDescription = null,
                 modifier = Modifier
+                    .size(36.dp)
                     .graphicsLayer {
                         translationX = fishOffsetX
                         translationY = fishOffsetY
@@ -191,7 +193,6 @@ internal fun NemoAnimatedLogo(
                         scaleY = fishScale
                     }
             )
-
             // Foreground Bubble (rising)
             Text(
                 text = "🫧",

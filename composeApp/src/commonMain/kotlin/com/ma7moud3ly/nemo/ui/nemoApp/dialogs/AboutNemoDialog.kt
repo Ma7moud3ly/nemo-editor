@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ma7moud3ly.nemo.platform.emojiFontFontFamily
 import com.ma7moud3ly.nemo.themes.AppTheme
 import com.ma7moud3ly.nemo.themes.EditorThemes
-import com.ma7moud3ly.nemo.themes.emojiFontFontFamily
 import com.ma7moud3ly.nemo.ui.nemoApp.welcome.AppSlogan
 import nemoeditor.composeapp.generated.resources.Res
 import nemoeditor.composeapp.generated.resources.about_dialog_build

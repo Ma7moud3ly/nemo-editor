@@ -7,24 +7,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import com.ma7moud3ly.nemo.model.EditorTheme
 import com.ma7moud3ly.nemo.platform.ConfigureSystemBars
 import com.ma7moud3ly.nemo.platform.LocalPlatform
 import com.ma7moud3ly.nemo.platform.getPlatform
-import com.ma7moud3ly.nemo.platform.isWasmJs
-import com.ma7moud3ly.nemo.model.EditorTheme
-import nemoeditor.composeapp.generated.resources.Res
-import nemoeditor.composeapp.generated.resources.noto_color_emoji_regular
-import org.jetbrains.compose.resources.Font
 
 private fun Long.toColor() = Color(this)
 
-@Composable
-internal fun emojiFontFontFamily(): FontFamily? {
-    val platform = LocalPlatform.current
-    return if (platform.isWasmJs) FontFamily(Font(Res.font.noto_color_emoji_regular))
-    else null
-}
 
 /**
  * Creates and returns a Material Design [ColorScheme] derived from the EditorTheme.

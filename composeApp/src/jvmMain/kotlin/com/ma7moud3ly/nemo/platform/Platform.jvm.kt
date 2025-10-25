@@ -2,6 +2,7 @@ package com.ma7moud3ly.nemo.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -22,3 +23,6 @@ actual fun ConfigureSystemBars(
 }
 
 actual fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+@Composable
+actual fun emojiFontFontFamily(): FontFamily? = null
