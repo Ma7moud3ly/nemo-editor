@@ -1,8 +1,10 @@
 package com.ma7moud3ly.nemo
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -17,7 +19,7 @@ import com.ma7moud3ly.nemo.ui.nemoApp.NemoEditorViewModel
 
 
 @Composable
-internal fun CodeEditorApp(
+internal fun NemoEditorApp(
     viewModel: NemoEditorViewModel = viewModel { NemoEditorViewModel() }
 ) {
     val theme by remember { viewModel.editorSettings.themeState }
@@ -30,8 +32,12 @@ internal fun CodeEditorApp(
 
     AppTheme(theme = theme) {
         Surface(
-            modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding(),
-            color = MaterialTheme.colorScheme.background
+            modifier = Modifier.fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding(),
+            color = MaterialTheme.colorScheme.surface
         ) {
             AppGraph(viewModel)
         }

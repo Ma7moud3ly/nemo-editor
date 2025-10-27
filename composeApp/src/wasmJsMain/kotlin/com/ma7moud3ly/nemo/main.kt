@@ -8,6 +8,6 @@ import kotlinx.browser.document
 fun main() {
     val body = document.body ?: return
     ComposeViewport(body) {
-        CodeEditorApp()
+        NemoEditorApp()
     }
 }

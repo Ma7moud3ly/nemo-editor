@@ -11,6 +11,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+
+    alias(libs.plugins.maven.publishing)
 }
 
 // apply gms & firebase plugin only for gms build flavour
@@ -86,6 +88,10 @@ kotlin {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "nemoeditor.composeapp.generated.resources"
 }
 
 val projectPackageName = libs.versions.project.packageName.get()

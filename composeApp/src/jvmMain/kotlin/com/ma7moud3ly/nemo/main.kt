@@ -19,6 +19,6 @@ fun main() = application {
             placement = WindowPlacement.Maximized
         )
     ) {
-        CodeEditorApp()
+        NemoEditorApp()
     }
 }

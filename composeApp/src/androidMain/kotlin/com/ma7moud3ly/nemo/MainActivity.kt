@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         FileKit.init(this)
         setContent {
-            CodeEditorApp()
+            NemoEditorApp()
         }
     }
 }

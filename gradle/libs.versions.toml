@@ -1,4 +1,5 @@
 [versions]
+gradleMavenPublishPlugin = "0.34.0"
 project-packageName = "com.ma7moud3ly.nemo"
 project-vendor = "github.com/Ma7moud3ly"
 project-versionCode = "1"
@@ -12,6 +13,7 @@ kotlin = "2.2.20"
 composeHotReload = "1.0.0-rc02"
 composeMultiplatform = "1.9.1"
 kotlinSerialization = "2.2.20"
+mavenPublish = "0.30.0"
 #common
 androidx-core = "1.17.0"
 androidx-lifecycle = "2.9.5"
@@ -52,6 +54,11 @@ settings-serialization = { module = "com.russhwolf:multiplatform-settings-serial
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics-ktx = { module = "com.google.firebase:firebase-analytics" }
 firebase-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }
+# maven central publishing
+android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+vanniktech-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublish" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -64,3 +71,6 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 #android
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }
+#maven
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
+maven-publishing = { id = "maven.publishing" }

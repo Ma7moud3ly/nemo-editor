@@ -115,7 +115,7 @@ internal fun EditorTopBar(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
-        tonalElevation = 1.dp
+        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier

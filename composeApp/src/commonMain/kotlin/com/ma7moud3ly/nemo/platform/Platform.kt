@@ -4,13 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import com.ma7moud3ly.nemo.model.NemoFile
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import kotlinx.coroutines.CoroutineDispatcher
-import nemoeditor.composeapp.generated.resources.Res
-import org.jetbrains.compose.resources.Font
 
 enum class PlatformType {
     ANDROID, WASM_JS, JVM, IOS

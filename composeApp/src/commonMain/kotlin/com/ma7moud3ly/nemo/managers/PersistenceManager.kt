@@ -4,9 +4,12 @@ import com.ma7moud3ly.nemo.model.EditorSettings
 import com.ma7moud3ly.nemo.model.NemoFile
 import com.ma7moud3ly.nemo.model.SettingsData
 import com.ma7moud3ly.nemo.model.SavedTabData
+import com.ma7moud3ly.nemo.platform.Platform
 import com.ma7moud3ly.nemo.platform.asPlatformFile
 import com.ma7moud3ly.nemo.platform.exists
+import com.ma7moud3ly.nemo.platform.getPlatform
 import com.ma7moud3ly.nemo.platform.ioDispatcher
+import com.ma7moud3ly.nemo.platform.isWasmJs
 import com.ma7moud3ly.nemo.themes.EditorThemes
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.set
@@ -29,13 +32,15 @@ import kotlinx.serialization.json.Json
  * @param editorSettings Reference to editor settings
  * @param settings Platform-specific settings implementation
  * @param ioDispatcher Coroutine dispatcher for IO operations
+ * @param platform Current platform
  */
 internal class PersistenceManager(
     private val tabsManager: TabsManager,
     private val filesManager: FilesManager,
     private val editorSettings: EditorSettings,
     private val settings: Settings = Settings(),
-    private val ioDispatcher: CoroutineDispatcher = ioDispatcher()
+    private val ioDispatcher: CoroutineDispatcher = ioDispatcher(),
+    private val platform: Platform = getPlatform()
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -99,10 +104,11 @@ internal class PersistenceManager(
                     id = tab.id,
                     filePath = file.path,
                     fileName = file.name,
-                    tempContent = if (file.exists()) "" else tab.fileContent,
+                    tempContent = if (file.exists() && platform.isWasmJs.not()) ""
+                    else tab.fileContent,
                     fileExtension = file.extension,
                     cursorPosition = tab.codeState.cursorPosition,
-                    isDirty = file.exists().not()
+                    isDirty = file.exists().not() || platform.isWasmJs
                 )
             }
 

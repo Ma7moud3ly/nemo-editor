@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Comment
+import androidx.compose.material.icons.automirrored.filled.FormatIndentDecrease
+import androidx.compose.material.icons.automirrored.filled.FormatIndentIncrease
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
@@ -81,11 +84,19 @@ private val groupedShortcuts = listOf(
     // Line Operations
     KeyboardShortcut("Ctrl + D", "Duplicate Line", "Edit", Icons.Default.ContentCopy),
     KeyboardShortcut("Ctrl + L", "Delete Line", "Edit", Icons.Default.Delete),
-    KeyboardShortcut("Ctrl + /", "Toggle Comment", "Edit", Icons.Default.Comment),
+    KeyboardShortcut("Ctrl + /", "Toggle Comment", "Edit", Icons.AutoMirrored.Filled.Comment),
 
     // Indentation
-    KeyboardShortcut("Ctrl + ]", "Indent", "Format", Icons.Default.FormatIndentIncrease),
-    KeyboardShortcut("Ctrl + [", "Unindent", "Format", Icons.Default.FormatIndentDecrease),
+    KeyboardShortcut(
+        "Ctrl + ]",
+        "Indent",
+        "Format",
+        Icons.AutoMirrored.Filled.FormatIndentIncrease
+    ),
+    KeyboardShortcut(
+        "Ctrl + [", "Unindent", "Format",
+        Icons.AutoMirrored.Filled.FormatIndentDecrease
+    ),
 
     // Selection
     KeyboardShortcut("Ctrl + A", "Select All", "Edit", Icons.Default.SelectAll)

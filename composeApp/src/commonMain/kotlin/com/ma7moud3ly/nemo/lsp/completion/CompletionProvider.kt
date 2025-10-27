@@ -40,7 +40,7 @@ abstract class CompletionProvider {
      *
      * @param text The entire source code text in the editor.
      * @param position The current zero-based index of the cursor in the text.
-     * @return A list of [com.ma7moud3ly.nemo.model.CompletionItem] objects to be displayed to the user.
+     * @return A list of [CompletionItem] objects to be displayed to the user.
      */
     abstract suspend fun provideCompletions(text: String, position: Int): List<CompletionItem>
 
