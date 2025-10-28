@@ -11,8 +11,6 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
-
-    alias(libs.plugins.maven.publishing)
 }
 
 // apply gms & firebase plugin only for gms build flavour
@@ -52,6 +50,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.nemoEditor)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

@@ -7,8 +7,7 @@
 **/keys
 **/*.log
 **/google-services.json
-build_all.ps1
-build_wasmJs.ps1
+*.ps1
 fastlane/*.xml
 **/build/
 xcuserdata

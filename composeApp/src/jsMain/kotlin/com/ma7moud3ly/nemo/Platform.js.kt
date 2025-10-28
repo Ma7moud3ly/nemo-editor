@@ -1,4 +1,4 @@
-package com.ma7moud3ly.nemo
+package io.ma7moud3ly.nemo
 
 class JsPlatform: Platform {
     override val name: String = "Web with Kotlin/JS"

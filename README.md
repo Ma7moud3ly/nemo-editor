@@ -12,7 +12,7 @@ A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform a
 ---
 ## 📥 Download
 
-- 🤖 [Android (Google Play)](https://play.google.com/store/apps/details?id=com.ma7moud3ly.nemo)
+- 🤖 [Android (Google Play)](https://play.google.com/store/apps/details?id=io.ma7moud3ly.nemo)
 - 🍎 iOS (App Store) *(coming soon)*
 - 🌐 [Web Version](https://nemo-editor.web.app/)
 - 📦 [Latest Release (GitHub)](https://github.com/ma7moud3ly/nemo-editor/releases)
