@@ -6,7 +6,7 @@ A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform a
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Compose-1.7+-4285F4?logo=jetpackcompose&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Desktop%20%7C%20Web-blue)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Desktop%20%7C%20Web-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -90,7 +90,12 @@ cd nemo-editor
 
 ## 📦 Using Nemo Editor in Your KMP Project
 
-## 📚 Examples
+### 📦 Installation
+```kotlin
+commonMain.dependencies {
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.0")
+}
+```
 
 ### Example: Basic Kotlin Editor
 

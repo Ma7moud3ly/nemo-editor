@@ -54,7 +54,7 @@ lane :setup_env do
     else
       UI.important("RELEASE_KEYSTORE_BASE64 not provided, skipping keystore.")
     end
-  
+
 
   if ENV["LOCAL_PROPERTIES"].to_s != ""
     File.write("../local.properties", ENV["LOCAL_PROPERTIES"])

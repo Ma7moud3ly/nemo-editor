@@ -8,18 +8,17 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.maven.publishing)
+    alias(libs.plugins.vanniktech.maven.publish)
 }
 
 kotlin {
     androidTarget {
-        publishLibraryVariants("release")
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
 
-    /*listOf(
+    listOf(
         iosX64(),
         iosArm64(),
         iosSimulatorArm64()
@@ -28,7 +27,7 @@ kotlin {
             baseName = "NemoEditor"
             isStatic = true
         }
-    }*/
+    }
 
     jvm()
 
@@ -36,6 +35,8 @@ kotlin {
     wasmJs {
         browser()
     }
+
+    js()
 
     sourceSets {
         commonMain.dependencies {
@@ -51,13 +52,6 @@ kotlin {
             implementation(libs.material3.adaptive)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.json)
-        }
-        androidMain.dependencies {
-            implementation(libs.androidx.core)
-        }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -90,4 +84,43 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+// Maven Publishing Configuration
+mavenPublishing {
+    val versionName = libs.versions.project.versionName.get()
+    coordinates("io.github.ma7moud3ly", "nemo-editor", versionName)
+
+    pom {
+        name.set("Nemo Code Editor")
+        description.set("A powerful, cross-platform code editor component built with Compose Multiplatform, featuring syntax highlighting, code formatting, and advanced editing capabilities")
+        url.set("https://github.com/Ma7moud3ly/nemo-editor")
+        inceptionYear.set("2025")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+                distribution.set("repo")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("ma7moud3ly")
+                name.set("Mahmoud Aly")
+                email.set("engma7moud3ly@gmail.com")
+                url.set("https://github.com/Ma7moud3ly")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/Ma7moud3ly/nemo-editor")
+            connection.set("scm:git:git://github.com/Ma7moud3ly/nemo-editor.git")
+            developerConnection.set("scm:git:ssh://git@github.com/Ma7moud3ly/nemo-editor.git")
+        }
+    }
+
+    publishToMavenCentral(automaticRelease = false)
+    signAllPublications()
 }
