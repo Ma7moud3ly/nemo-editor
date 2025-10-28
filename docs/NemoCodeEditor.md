@@ -2,12 +2,17 @@
 
 Complete reference for integrating NemoCodeEditor into your Kotlin Multiplatform projects.
 
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)
+![Compose](https://img.shields.io/badge/Compose-1.7+-4285F4?logo=jetpackcompose&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Desktop%20%7C%20Web-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 ---
 
 ## 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.0")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.2")
 }
 ```
 
@@ -21,15 +26,15 @@ Main editor component.
 ```kotlin
 @Composable
 fun NemoCodeEditor(
-    codeState: CodeState,
-    editorSettings: EditorSettings,
+    state: CodeState,
+    settings: EditorSettings,
     modifier: Modifier = Modifier
 )
 ```
 
 **Parameters:**
-- `codeState` - Editor content state
-- `editorSettings` - Editor configuration
+- `state` - Editor content state
+- `settings` - Editor configuration
 - `modifier` - Compose modifier
 
 ---
@@ -51,35 +56,15 @@ CodeState(
 | Property | Type | Description |
 |----------|------|-------------|
 | `code` | `String` | Current code content |
-| `value` | `TextFieldValue` | TextField value with selection |
 | `language` | `Language` | Programming language |
-| `cursorPosition` | `Int` | Current cursor position |
-| `selection` | `TextRange` | Current selection range |
-| `currentLine` | `Int` | Current line number (1-based) |
-| `totalLines` | `Int` | Total number of lines |
-| `contentChanged` | `Boolean` | Has content been modified? |
 
 ### Methods
 ```kotlin
-// Text manipulation
-fun updateText(newCode: String)
-fun insertText(text: String, position: Int)
-fun deleteRange(start: Int, end: Int)
-
-// Selection
-fun setSelection(start: Int, end: Int)
-fun selectAll()
-
-// History
 fun undo()
 fun redo()
 fun canUndo(): Boolean
 fun canRedo(): Boolean
 fun clearHistory()
-
-// Autocomplete
-fun insertCompletion(text: String)
-
 // Change tracking
 fun commitChanges()  // Mark as saved
 ```
@@ -92,7 +77,7 @@ fun MyEditor() {
         code = "fun main() {\n    println(\"Hello\")\n}",
         language = Language.KOTLIN
     )
-    NemoCodeEditor(codeState = codeState)
+    NemoCodeEditor(state = codeState)
 }
 ```
 <div align="center">
@@ -118,7 +103,7 @@ fun PythonEditor() {
     )
 
 
-    val settings = remember {
+    val editorSettings = remember {
         EditorSettings(
             theme = EditorThemes.NEMO_DARK,
             tabSize = 4,
@@ -126,8 +111,8 @@ fun PythonEditor() {
     }
 
     NemoCodeEditor(
-        codeState = codeState,
-        editorSettings = settings,
+        state = codeState,
+        settings = settings,
         modifier = Modifier.fillMaxSize()
     )
 }
@@ -160,7 +145,7 @@ EditorSettings(
 
 ### Properties
 
-All properties are `MutableState` for reactive updates:
+All properties are exposed as `MutableState` for reactive updates:
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -175,12 +160,8 @@ All properties are `MutableState` for reactive updates:
 
 ### Methods
 ```kotlin
-// Zoom
 fun zoomIn()
 fun zoomOut()
-fun gesturesZoom(zoom: Float)
-
-// Toggles
 fun toggleLinesNumber()
 fun toggleReadOnly()
 ```

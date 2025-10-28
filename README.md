@@ -19,7 +19,7 @@ A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform a
 
 ---
 
-<image src="images/banner.png">
+<image src="images/banner.png" />
 
 ## ✨ Features
 
@@ -93,7 +93,7 @@ cd nemo-editor
 ### 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.0")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.2")
 }
 ```
 
@@ -106,7 +106,7 @@ fun MyEditor() {
         code = "fun main() {\n    println(\"Hello\")\n}",
         language = Language.KOTLIN
     )
-    NemoCodeEditor(codeState = codeState)
+    NemoCodeEditor(state = codeState)
 }
 ```
 
@@ -129,7 +129,7 @@ fun PythonEditor() {
     )
 
 
-    val settings = remember {
+    val editorSettings = remember {
         EditorSettings(
             theme = EditorThemes.NEMO_DARK,
             tabSize = 4,
@@ -137,8 +137,8 @@ fun PythonEditor() {
     }
 
     NemoCodeEditor(
-        codeState = codeState,
-        editorSettings = settings,
+        state = codeState,
+        settings = editorSettings,
         modifier = Modifier.fillMaxSize()
     )
 }
