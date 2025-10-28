@@ -18,5 +18,5 @@ fun MyEditor() {
         code = "fun main() {\n    println(\"Hello\")\n}",
         language = Language.KOTLIN
     )
-    NemoCodeEditor(codeState = codeState)
+    NemoCodeEditor(state = codeState)
 }

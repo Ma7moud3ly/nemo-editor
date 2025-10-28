@@ -164,8 +164,8 @@ internal fun NemoEditorScreenContent(
                             )
                         }
                         NemoCodeEditor(
-                            codeState = codeState!!,
-                            editorSettings = editorSettings,
+                            state = codeState!!,
+                            settings = editorSettings,
                             modifier = Modifier.weight(1f)
                         )
                     }

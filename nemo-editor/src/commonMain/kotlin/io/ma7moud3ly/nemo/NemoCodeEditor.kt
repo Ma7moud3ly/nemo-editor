@@ -59,24 +59,24 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun NemoCodeEditor(
-    codeState: CodeState,
-    editorSettings: EditorSettings = EditorSettings(),
+    state: CodeState,
+    settings: EditorSettings = EditorSettings(),
     modifier: Modifier = Modifier
 ) {
-    val language = codeState.language
-    val theme by remember { editorSettings.themeState }
+    val language = state.language
+    val theme by remember { settings.themeState }
 
     val tokenizer = remember(language) { TokenizerFactory.getTokenizer(language) }
     val errorDetector = remember(language) { ErrorDetectorFactory.getErrorDetector(language) }
-    val autoIndentHandler = remember(language, editorSettings) {
-        AutoIndentHandlerFactory.create(language, editorSettings)
+    val autoIndentHandler = remember(language, settings) {
+        AutoIndentHandlerFactory.create(language, settings)
     }
     val highlighter = remember(theme, tokenizer, errorDetector) {
         SyntaxHighlighter(tokenizer, errorDetector, theme)
     }
 
-    val highlightedCode = remember(codeState.code, theme) {
-        highlighter.highlight(codeState.code)
+    val highlightedCode = remember(state.code, theme) {
+        highlighter.highlight(state.code)
     }
 
     // Track scroll state for autocomplete positioning
@@ -89,7 +89,7 @@ fun NemoCodeEditor(
         modifier = modifier
             .pointerInput(Unit) {
                 detectTransformGestures { _, _, zoom, _ ->
-                    editorSettings.gesturesZoom(zoom)
+                    settings.gesturesZoom(zoom)
                 }
             }
             .onPreviewKeyEvent { keyEvent ->
@@ -108,7 +108,7 @@ fun NemoCodeEditor(
 
                         Key.Tab, Key.Enter -> {
                             autocompleteState.getSelectedItem()?.let { item ->
-                                codeState.insertCompletion(item.insertText)
+                                state.insertCompletion(item.insertText)
                                 autocompleteState.markCompletionInserted()
                             }
                             true
@@ -127,29 +127,29 @@ fun NemoCodeEditor(
             }
     ) {
         EditorContent(
-            code = codeState.value,
+            code = state.value,
             highlightedCode = highlightedCode,
             onValueChange = { newValue ->
-                if (editorSettings.readOnlyState.value.not()) {
-                    codeState.handleTextChange(
+                if (settings.readOnlyState.value.not()) {
+                    state.handleTextChange(
                         newValue = newValue,
-                        autoIndentHandler = if (editorSettings.enableAutoIndentState.value) autoIndentHandler
+                        autoIndentHandler = if (settings.enableAutoIndentState.value) autoIndentHandler
                         else null
                     )
                 }
             },
             theme = theme,
-            totalLines = codeState.totalLines,
-            currentLineIndex = codeState.currentLine - 1,
-            fontSize = editorSettings.fontSizeState.value,
-            showLineNumbers = editorSettings.showLineNumbersState.value,
-            readOnly = editorSettings.readOnlyState.value,
+            totalLines = state.totalLines,
+            currentLineIndex = state.currentLine - 1,
+            fontSize = settings.fontSizeState.value,
+            showLineNumbers = settings.showLineNumbersState.value,
+            readOnly = settings.readOnlyState.value,
             scrollState = scrollState
         )
 
         AutocompletePopup(
-            state = codeState,
-            settings = editorSettings,
+            state = state,
+            settings = settings,
             scrollOffset = scrollState.value,
             autocompleteState = autocompleteState
         )

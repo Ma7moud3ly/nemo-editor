@@ -8,7 +8,7 @@ import io.ma7moud3ly.nemo.model.Language
 /**
  * Handles automatic indentation when user presses Enter
  */
-class AutoIndentHandler(
+internal class AutoIndentHandler(
     private val language: Language,
     private val settings: EditorSettings
 ) {
@@ -135,7 +135,7 @@ class AutoIndentHandler(
 /**
  * Factory to create language-specific auto-indent handlers
  */
-object AutoIndentHandlerFactory {
+internal object AutoIndentHandlerFactory {
     fun create(language: Language, settings: EditorSettings): AutoIndentHandler {
         return AutoIndentHandler(language, settings)
     }

@@ -33,16 +33,17 @@ fun PythonEditor() {
     )
 
 
-    val settings = remember {
+    val editorSettings = remember {
         EditorSettings(
             theme = EditorThemes.NEMO_DARK,
+            readOnly = true,
             tabSize = 4,
         )
     }
 
     NemoCodeEditor(
-        codeState = codeState,
-        editorSettings = settings,
+        state = codeState,
+        settings = editorSettings,
         modifier = Modifier.fillMaxSize()
     )
 }

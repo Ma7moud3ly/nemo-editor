@@ -36,13 +36,13 @@ class CodeState(
     /**
      * Code editor text field value
      */
-    var value by mutableStateOf(
+    internal var value by mutableStateOf(
         TextFieldValue(
             text = initialCode,
             selection = TextRange(initialCursorPosition)
         )
     )
-        internal set
+
 
     /**
      * Current text content
@@ -168,7 +168,7 @@ class CodeState(
      *
      * @param insertText The text to insert
      */
-    fun insertCompletion(insertText: String) {
+    internal fun insertCompletion(insertText: String) {
         val cursorPos = this.cursorPosition
         val separators = " \n\t(){}[].,;:\"'<>="
 
@@ -211,7 +211,7 @@ class CodeState(
      * @param autoIndentHandler Optional auto-indent handler for Enter key processing
      * @return true if the change was handled successfully
      */
-    fun handleTextChange(
+    internal fun handleTextChange(
         newValue: TextFieldValue,
         autoIndentHandler: AutoIndentHandler? = null
     ): Boolean {

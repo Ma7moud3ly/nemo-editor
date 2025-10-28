@@ -2,7 +2,7 @@
 project-packageName = "io.ma7moud3ly.nemo"
 project-vendor = "github.com/Ma7moud3ly"
 project-versionCode = "1"
-project-versionName = "1.0.1"
+project-versionName = "1.0.2"
 android-compileSdk = "36"
 android-targetSdk = "36"
 android-minSdk = "24"
