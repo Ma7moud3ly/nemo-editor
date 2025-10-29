@@ -81,7 +81,7 @@ fun MyEditor() {
 }
 ```
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Ma7moud3ly/kmp-code-editor/refs/heads/master/images/docs/exmple1.png" alt="Basic Kotlin Editor" width="400"/>
+  <img src="https://raw.githubusercontent.com/Ma7moud3ly/nemo-editor/refs/heads/main/images/docs/exmple1.png" alt="Basic Kotlin Editor" width="400"/>
   <p><em>Simple Kotlin editor with default theme and settings</em></p>
 </div>
 
@@ -119,7 +119,7 @@ fun PythonEditor() {
 
 ```
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Ma7moud3ly/kmp-code-editor/refs/heads/master/images/docs/exmple2.png" alt="Basic Kotlin Editor" width="400"/>
+  <img src="https://raw.githubusercontent.com/Ma7moud3ly/nemo-editor/refs/heads/main/images/docs/exmple2.png" alt="Basic Kotlin Editor" width="400"/>
   <p><em>Python editor</em></p>
 </div>
 
