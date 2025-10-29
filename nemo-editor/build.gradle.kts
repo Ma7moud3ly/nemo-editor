@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
@@ -48,13 +47,8 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.materialIconsExtended)
-            implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.material3.adaptive)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -62,9 +56,6 @@ kotlin {
     }
 }
 
-compose.resources {
-    packageOfResClass = "nemoeditor.composeapp.generated.resources"
-}
 
 android {
     namespace = libs.versions.project.packageName.get()
