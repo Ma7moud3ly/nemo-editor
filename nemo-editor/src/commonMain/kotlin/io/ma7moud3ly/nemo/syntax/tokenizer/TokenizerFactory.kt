@@ -6,7 +6,7 @@ object TokenizerFactory {
     fun getTokenizer(language: Language): LanguageTokenizer {
         return when (language) {
             Language.KOTLIN -> KotlinTokenizer()
-            Language.PYTHON -> PythonTokenizer()
+            Language.PYTHON, Language.MICRO_PYTHON -> PythonTokenizer()
             else -> KotlinTokenizer()
         }
     }

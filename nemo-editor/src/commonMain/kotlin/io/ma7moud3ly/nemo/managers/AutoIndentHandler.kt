@@ -76,7 +76,7 @@ internal class AutoIndentHandler(
 
         return when (language) {
             Language.KOTLIN -> shouldIncreaseIndentKotlin(trimmedLine)
-            Language.PYTHON -> shouldIncreaseIndentPython(trimmedLine)
+            Language.PYTHON, Language.MICRO_PYTHON -> shouldIncreaseIndentPython(trimmedLine)
             Language.JAVA -> shouldIncreaseIndentJava(trimmedLine)
             Language.JAVASCRIPT -> shouldIncreaseIndentJavaScript(trimmedLine)
             else -> false
