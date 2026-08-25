@@ -25,8 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
@@ -41,7 +43,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +58,9 @@ import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorTheme
 import io.ma7moud3ly.nemo.syntax.analysis.ErrorDetectorFactory
 import io.ma7moud3ly.nemo.syntax.highlighting.SyntaxHighlighter
+import io.ma7moud3ly.nemo.syntax.indent.IndentGuideCalculator
+import io.ma7moud3ly.nemo.syntax.indent.IndentGuides
+import io.ma7moud3ly.nemo.syntax.indent.indentGuides
 import io.ma7moud3ly.nemo.syntax.tokenizer.TokenizerFactory
 import kotlinx.coroutines.launch
 
@@ -77,6 +84,14 @@ fun NemoCodeEditor(
 
     val highlightedCode = remember(state.code, theme) {
         highlighter.highlight(state.code)
+    }
+
+    // Indentation guides - recomputed only when the text or tab size changes,
+    // the active guide is resolved later during the draw phase.
+    val tabSize = settings.tabSizeState.value
+    val showGuides = settings.showIndentGuidesState.value
+    val indentGuides = remember(state.code, tabSize, showGuides) {
+        if (showGuides) IndentGuideCalculator.compute(state.code, tabSize) else null
     }
 
     // Track scroll state for autocomplete positioning
@@ -144,7 +159,9 @@ fun NemoCodeEditor(
             fontSize = settings.fontSizeState.value,
             showLineNumbers = settings.showLineNumbersState.value,
             readOnly = settings.readOnlyState.value,
-            scrollState = scrollState
+            scrollState = scrollState,
+            guides = { indentGuides },
+            activeLine = { state.currentLine - 1 }
         )
 
         AutocompletePopup(
@@ -167,7 +184,9 @@ private fun EditorContent(
     fontSize: Int,
     showLineNumbers: Boolean,
     readOnly: Boolean,
-    scrollState: ScrollState
+    scrollState: ScrollState,
+    guides: () -> IndentGuides?,
+    activeLine: () -> Int
 ) {
     val horizontalScrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -175,6 +194,25 @@ private fun EditorContent(
 
     val textSize = fontSize.sp
     val lineHeight = (fontSize * 1.5f).sp
+
+    val codeTextStyle = remember(textSize, lineHeight) {
+        TextStyle(
+            fontFamily = FontFamily.Monospace,
+            fontSize = textSize,
+            lineHeight = lineHeight
+        )
+    }
+
+    // Layout of the highlighted text, used to place indent guides on exact rows.
+    var codeTextLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    // Advance width of a single monospace glyph. Measured over a run of
+    // characters so the per-glyph rounding error stays negligible.
+    val textMeasurer = rememberTextMeasurer()
+    val charWidth = remember(codeTextStyle, textMeasurer) {
+        val sample = "0".repeat(CHAR_WIDTH_SAMPLE)
+        textMeasurer.measure(sample, codeTextStyle).size.width / CHAR_WIDTH_SAMPLE.toFloat()
+    }
 
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
@@ -249,12 +287,7 @@ private fun EditorContent(
                     value = code,
                     onValueChange = onValueChange,
                     readOnly = readOnly,
-                    textStyle = TextStyle(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = textSize,
-                        lineHeight = lineHeight,
-                        color = Color.Transparent
-                    ),
+                    textStyle = codeTextStyle.copy(color = Color.Transparent),
                     cursorBrush = SolidColor(Color(theme.syntax.keyword)),
                     modifier = Modifier
                         .fillMaxSize()
@@ -263,27 +296,30 @@ private fun EditorContent(
                         .padding(horizontal = 4.dp)
                         .focusRequester(focusRequester),
                     decorationBox = { innerTextField ->
-                        Box {
+                        Box(
+                            modifier = Modifier.indentGuides(
+                                guides = guides,
+                                activeLine = activeLine,
+                                textLayout = { codeTextLayout },
+                                charWidth = { charWidth },
+                                color = Color(theme.lineNumber).copy(alpha = 0.30f),
+                                activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
+                            )
+                        ) {
                             if (code.text.isEmpty()) {
                                 Text(
                                     if (readOnly) "" else "Start typing...",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = textSize,
-                                        lineHeight = lineHeight,
+                                    style = codeTextStyle.copy(
                                         color = Color(theme.lineNumber)
                                     )
                                 )
                             } else {
                                 Text(
                                     text = highlightedCode,
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = textSize,
-                                        lineHeight = lineHeight
-                                    ),
+                                    style = codeTextStyle,
                                     softWrap = false,
-                                    maxLines = Int.MAX_VALUE
+                                    maxLines = Int.MAX_VALUE,
+                                    onTextLayout = { codeTextLayout = it }
                                 )
                             }
                             Box(modifier = Modifier.alpha(1f)) {
@@ -296,3 +332,6 @@ private fun EditorContent(
         }
     }
 }
+
+/** Sample length used to derive the monospace advance width. */
+private const val CHAR_WIDTH_SAMPLE = 32

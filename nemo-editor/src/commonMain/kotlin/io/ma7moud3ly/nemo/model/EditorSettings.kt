@@ -12,6 +12,7 @@ import kotlin.math.min
  * @param tabSize Number of spaces per tab (2-8)
  * @param useTabs Use tab character instead of spaces
  * @param showLineNumbers Display line numbers in the gutter
+ * @param showIndentGuides Draw vertical guides at each indentation level
  * @param fontSize Font size
  * @param fontFamily Font family name (default: JetBrains Mono)
  * @param enableAutoIndent Automatically indent new lines
@@ -28,6 +29,7 @@ data class EditorSettings(
 
     // Display
     private val showLineNumbers: Boolean = true,
+    private val showIndentGuides: Boolean = true,
     private val fontSize: Int = 14,
     val fontFamily: String = "JetBrains Mono",
 
@@ -45,6 +47,7 @@ data class EditorSettings(
     val tabSizeState = mutableStateOf(tabSize)
     val useTabsState = mutableStateOf(useTabs)
     val showLineNumbersState = mutableStateOf(showLineNumbers)
+    val showIndentGuidesState = mutableStateOf(showIndentGuides)
     val fontSizeState = mutableStateOf(fontSize)
     val enableAutoIndentState = mutableStateOf(enableAutoIndent)
     val enableAutocompleteState = mutableStateOf(enableAutocomplete)
@@ -56,6 +59,10 @@ data class EditorSettings(
 
     fun toggleLinesNumber() {
         showLineNumbersState.value = !showLineNumbersState.value
+    }
+
+    fun toggleIndentGuides() {
+        showIndentGuidesState.value = !showIndentGuidesState.value
     }
 
     fun gesturesZoom(scale: Float) {
@@ -94,6 +101,7 @@ data class EditorSettings(
         tabSizeState.value,
         useTabsState.value,
         showLineNumbersState.value,
+        showIndentGuidesState.value,
         fontSizeState.value,
         fontFamily,
         enableAutoIndentState.value,
