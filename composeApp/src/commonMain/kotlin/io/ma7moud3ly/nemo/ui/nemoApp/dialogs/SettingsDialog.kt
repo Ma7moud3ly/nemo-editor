@@ -43,7 +43,7 @@ import nemoeditor.composeapp.generated.resources.settings_dialog_tab_size
 import nemoeditor.composeapp.generated.resources.settings_dialog_title
 import nemoeditor.composeapp.generated.resources.settings_dialog_use_tabs
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

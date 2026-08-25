@@ -44,7 +44,7 @@ import io.github.vinceglb.filekit.size
  *
  * Uses FileKit for KMP compatibility
  */
-internal class FilesManager(
+class FilesManager(
     private val initialFiles: List<NemoFile> = emptyList(),
     private val initialRoot: String? = null
 ) {
@@ -138,7 +138,7 @@ internal class FilesManager(
     /**
      * Read file by path
      *
-     * @param path The file path
+     * @param file The file path
      * @return File content or null on error
      */
     suspend fun readFile(file: NemoFile): String? {
@@ -576,7 +576,7 @@ internal class FilesManager(
 /**
  * File sort criteria
  */
-internal enum class FileSortCriteria(val comparator: Comparator<NemoFile>) {
+enum class FileSortCriteria(val comparator: Comparator<NemoFile>) {
     NAME_ASC(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }),
     NAME_DESC(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name }),
     SIZE_ASC(compareBy { it.size }),

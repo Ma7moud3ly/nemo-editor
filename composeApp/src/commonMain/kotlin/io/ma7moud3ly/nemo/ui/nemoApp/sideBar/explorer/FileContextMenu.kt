@@ -45,7 +45,7 @@ import nemoeditor.composeapp.generated.resources.file_context_menu_rename
 import nemoeditor.composeapp.generated.resources.file_context_menu_rename_file_description
 import nemoeditor.composeapp.generated.resources.file_context_menu_rename_folder_description
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

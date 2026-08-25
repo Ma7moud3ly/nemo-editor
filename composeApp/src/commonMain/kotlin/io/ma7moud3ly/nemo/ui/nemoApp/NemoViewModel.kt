@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel for Nemo Editor - Updated with  UI
  */
-internal class NemoEditorViewModel : ViewModel() {
+class NemoEditorViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "NemoEditorViewModel"

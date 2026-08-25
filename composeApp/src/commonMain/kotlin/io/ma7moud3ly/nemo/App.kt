@@ -20,7 +20,7 @@ import io.ma7moud3ly.nemo.ui.nemoApp.NemoEditorViewModel
 
 
 @Composable
-internal fun NemoEditorApp(
+ fun NemoEditorApp(
     viewModel: NemoEditorViewModel = viewModel { NemoEditorViewModel() }
 ) {
     val theme by remember { viewModel.editorSettings.themeState }

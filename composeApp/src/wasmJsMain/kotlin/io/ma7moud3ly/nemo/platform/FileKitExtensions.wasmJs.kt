@@ -30,7 +30,6 @@ actual suspend fun FileKit.platformSaveFile(file: NemoFile, content: String) {}
 actual suspend fun FileKit.platformPickFile(): PlatformFile? {
     val platformFile = FileKit.openFilePicker(
         type = FileKitType.File(extensions),
-        title = "Open File",
         dialogSettings = FileKitDialogSettings.createDefault(),
     )
     return platformFile

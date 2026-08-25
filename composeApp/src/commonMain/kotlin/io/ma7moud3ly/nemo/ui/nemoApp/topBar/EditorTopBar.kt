@@ -87,7 +87,7 @@ import nemoeditor.composeapp.generated.resources.top_bar_view
 import nemoeditor.composeapp.generated.resources.top_bar_view_appearance
 import nemoeditor.composeapp.generated.resources.top_bar_view_settings
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

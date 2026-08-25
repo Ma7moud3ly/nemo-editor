@@ -15,14 +15,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 
 @Composable
 internal fun MyDialog(
+    modifier: Modifier = Modifier,
     background: Color = MaterialTheme.colorScheme.background,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    modifier: Modifier = Modifier,
     onDismiss: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -54,11 +54,14 @@ internal fun MyDialog(
 @Composable
 internal fun isCompactDevice(): Boolean {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    return windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+    // Compact = width below the medium breakpoint (600dp).
+    return !windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
 }
 
 @Composable
 internal fun isMediumDevice(): Boolean {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    return windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.MEDIUM
+    // Medium = at least the medium breakpoint (600dp) but below expanded (840dp).
+    return windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
+            !windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
 }

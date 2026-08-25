@@ -24,7 +24,7 @@ import nemoeditor.composeapp.generated.resources.bottom_bar_encoding
 import nemoeditor.composeapp.generated.resources.bottom_bar_font_size
 import nemoeditor.composeapp.generated.resources.bottom_bar_read_only
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

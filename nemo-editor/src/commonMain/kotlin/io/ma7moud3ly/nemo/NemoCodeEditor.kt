@@ -60,8 +60,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun NemoCodeEditor(
     state: CodeState,
-    settings: EditorSettings = EditorSettings(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    settings: EditorSettings = EditorSettings()
 ) {
     val language = state.language
     val theme by remember { settings.themeState }

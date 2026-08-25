@@ -45,6 +45,7 @@ import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 
 /**
@@ -91,7 +92,7 @@ fun AutocompletePopup(
     // Trigger autocomplete when text or cursor changes (with debounce)
     LaunchedEffect(state.code, state.cursorPosition) {
         // Small delay to debounce rapid typing
-        delay(100)
+        delay(100.milliseconds)
 
         val cursorPos = state.cursorPosition
         val textBeforeCursor = state.code.take(cursorPos)

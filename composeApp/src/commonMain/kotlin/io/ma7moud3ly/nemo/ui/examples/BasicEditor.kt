@@ -1,10 +1,11 @@
 package io.ma7moud3ly.nemo.ui.examples
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import io.ma7moud3ly.nemo.model.Language
 import io.ma7moud3ly.nemo.model.rememberCodeState
 import io.ma7moud3ly.nemo.NemoCodeEditor
-import org.jetbrains.compose.ui.tooling.preview.Preview
+
 
 @Preview
 @Composable

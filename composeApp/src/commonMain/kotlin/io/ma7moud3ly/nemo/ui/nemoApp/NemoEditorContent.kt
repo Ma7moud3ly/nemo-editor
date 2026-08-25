@@ -45,7 +45,7 @@ import io.ma7moud3ly.nemo.ui.nemoApp.sideBar.EditorSidebar
 import io.ma7moud3ly.nemo.ui.nemoApp.tabs.EditorTabs
 import io.ma7moud3ly.nemo.ui.nemoApp.topBar.EditorTopBar
 import io.ma7moud3ly.nemo.ui.nemoApp.welcome.WelcomeScreen
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
