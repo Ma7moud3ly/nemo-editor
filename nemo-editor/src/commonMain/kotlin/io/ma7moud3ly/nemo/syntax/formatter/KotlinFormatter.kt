@@ -239,7 +239,7 @@ class KotlinFormatter : CodeFormatter() {
 
         // Arithmetic operators (but not in negative numbers or function parameters)
         result = result.replace(Regex("([a-zA-Z0-9_)])\\s*\\+\\s*")) { "${it.groupValues[1]} + " }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*-\\s*")) { "${it.groupValues[1]} - " }
+        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*-(?!>)\\s*")) { "${it.groupValues[1]} - " }
         result = result.replace(Regex("([a-zA-Z0-9_)])\\s*\\*\\s*")) { "${it.groupValues[1]} * " }
         result = result.replace(Regex("([a-zA-Z0-9_)])\\s*/\\s*")) { "${it.groupValues[1]} / " }
         result = result.replace(Regex("([a-zA-Z0-9_)])\\s*%\\s*")) { "${it.groupValues[1]} % " }
