@@ -95,7 +95,13 @@ compose.desktop {
         mainClass = "$projectPackageName.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
+            targetFormats(
+                TargetFormat.Exe,
+                TargetFormat.Msi,
+                TargetFormat.Dmg,
+                TargetFormat.Deb,
+                TargetFormat.Rpm
+            )
             packageName = "Nemo Editor"
             packageVersion = libs.versions.project.versionName.get()
             vendor = libs.versions.project.vendor.get()
