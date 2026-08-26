@@ -1,4 +1,4 @@
-rootProject.name = "NemoEditor"
+rootProject.name = "NemoEditorProject"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
