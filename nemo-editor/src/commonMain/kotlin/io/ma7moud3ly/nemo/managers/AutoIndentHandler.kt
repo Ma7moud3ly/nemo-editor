@@ -20,51 +20,42 @@ internal class AutoIndentHandler(
         oldValue: TextFieldValue,
         newValue: TextFieldValue
     ): TextFieldValue? {
-        // Check if Enter was pressed
-        if (!isEnterPressed(oldValue, newValue)) {
-            return null
-        }
+        // Work out the edit from the text itself. Reading it off the reported
+        // caret breaks on input methods and on the web backend, where the caret
+        // still points at the previous offset when the change arrives.
+        val edit = diffText(oldValue.text, newValue.text) ?: return null
 
-        val cursorPosition = newValue.selection.start
-        if (cursorPosition == 0) return null
+        // Only a bare Enter indents - a paste that happens to contain a newline
+        // must keep the text exactly as pasted.
+        if (edit.removed.isNotEmpty()) return null
+        if (edit.inserted != "\n" && edit.inserted != "\r\n") return null
 
-        // Get previous line
-        val textBeforeCursor = newValue.text.substring(0, cursorPosition - 1)
-        val previousLine = getPreviousLine(textBeforeCursor)
+        val lineBreakEnd = edit.insertionEnd
+        val newIndent = indentForLineBreakAt(newValue.text, edit.start)
+        if (newIndent.isEmpty()) return null
 
-        // Calculate indent
-        val baseIndent = getLineIndent(previousLine)
-        val shouldIncreaseIndent = shouldIncreaseIndent(previousLine)
-        val newIndent = calculateNewIndent(baseIndent, shouldIncreaseIndent)
-
-        // Apply indent
-        if (newIndent.isNotEmpty()) {
-            val newText = newValue.text.substring(0, cursorPosition) +
+        return TextFieldValue(
+            text = newValue.text.substring(0, lineBreakEnd) +
                     newIndent +
-                    newValue.text.substring(cursorPosition)
-
-            return TextFieldValue(
-                text = newText,
-                selection = TextRange(cursorPosition + newIndent.length)
-            )
-        }
-
-        return null
+                    newValue.text.substring(lineBreakEnd),
+            selection = TextRange(lineBreakEnd + newIndent.length)
+        )
     }
 
-    private fun isEnterPressed(oldValue: TextFieldValue, newValue: TextFieldValue): Boolean {
-        return newValue.text.length > oldValue.text.length &&
-                newValue.selection.start > 0 &&
-                newValue.text[newValue.selection.start - 1] == '\n'
-    }
-
-    private fun getPreviousLine(textBeforeCursor: String): String {
-        val lastNewlineIndex = textBeforeCursor.lastIndexOf('\n')
-        return if (lastNewlineIndex == -1) {
-            textBeforeCursor
-        } else {
-            textBeforeCursor.substring(lastNewlineIndex + 1)
-        }
+    /**
+     * Indentation a line break inserted at [position] should carry, taken from
+     * the line the caret is leaving and widened by one level when that line
+     * opens a block.
+     *
+     * Returns an empty string when the new line belongs at column zero.
+     */
+    fun indentForLineBreakAt(text: String, position: Int): String {
+        val caret = position.coerceIn(0, text.length)
+        val currentLine = text.take(caret).substringAfterLast('\n')
+        return calculateNewIndent(
+            baseIndent = getLineIndent(currentLine),
+            shouldIncrease = shouldIncreaseIndent(currentLine)
+        )
     }
 
     private fun getLineIndent(line: String): String {

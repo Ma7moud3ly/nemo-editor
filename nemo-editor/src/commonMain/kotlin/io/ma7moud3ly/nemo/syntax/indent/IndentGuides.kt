@@ -6,11 +6,19 @@ package io.ma7moud3ly.nemo.syntax.indent
  *
  * Guides are merged into the longest possible vertical run, so one block body
  * produces one guide rather than one per row.
+ *
+ * [anchorLine] and [charOffset] locate the guide horizontally: the guide is
+ * drawn where character [charOffset] of [anchorLine] begins. Asking the text
+ * layout for that position keeps the guide aligned with the glyphs on every
+ * platform, whatever font is actually resolved and whether the file is indented
+ * with spaces or tabs.
  */
 data class IndentGuide(
     val column: Int,
     val startLine: Int,
-    val endLine: Int
+    val endLine: Int,
+    val anchorLine: Int,
+    val charOffset: Int
 )
 
 /**
@@ -76,7 +84,8 @@ object IndentGuideCalculator {
         if (code.isEmpty() || tabSize <= 0) return EMPTY
 
         val lines = code.split('\n')
-        val indents = effectiveIndents(lines, tabSize)
+        val raw = IntArray(lines.size) { indentWidth(lines[it], tabSize) }
+        val indents = effectiveIndents(raw)
         val columnsPerLine = enclosingColumns(indents)
 
         val columns = mutableSetOf<Int>()
@@ -84,6 +93,20 @@ object IndentGuideCalculator {
         if (columns.isEmpty()) return IndentGuides(emptyList(), columnsPerLine, indents)
 
         val guides = mutableListOf<IndentGuide>()
+
+        fun addGuide(column: Int, start: Int, end: Int) {
+            // Anchor on a row that really has this whitespace: a blank row
+            // inherits its indent and has no characters to measure against.
+            val anchor = (start..end).firstOrNull { raw[it] > column } ?: start
+            guides += IndentGuide(
+                column = column,
+                startLine = start,
+                endLine = end,
+                anchorLine = anchor,
+                charOffset = charOffsetOfColumn(lines[anchor], column, tabSize)
+            )
+        }
+
         for (column in columns.sorted()) {
             var runStart = -1
             for (line in indents.indices) {
@@ -91,14 +114,34 @@ object IndentGuideCalculator {
                 if (covered && runStart == -1) {
                     runStart = line
                 } else if (!covered && runStart != -1) {
-                    guides += IndentGuide(column, runStart, line - 1)
+                    addGuide(column, runStart, line - 1)
                     runStart = -1
                 }
             }
-            if (runStart != -1) guides += IndentGuide(column, runStart, indents.lastIndex)
+            if (runStart != -1) addGuide(column, runStart, indents.lastIndex)
         }
 
         return IndentGuides(guides, columnsPerLine, indents)
+    }
+
+    /**
+     * How many characters into [line] the visual [column] falls, expanding tabs
+     * on the way. Used to turn a column into an offset the text layout can
+     * resolve to an exact x coordinate.
+     */
+    private fun charOffsetOfColumn(line: String, column: Int, tabSize: Int): Int {
+        if (column <= 0) return 0
+        var width = 0
+        var index = 0
+        while (index < line.length && width < column) {
+            when (line[index]) {
+                ' ' -> width++
+                '\t' -> width += tabSize - (width % tabSize)
+                else -> return index
+            }
+            index++
+        }
+        return index
     }
 
     /**
@@ -129,9 +172,8 @@ object IndentGuideCalculator {
      * statements inside the same block keep the guide running through the gap,
      * while a gap between two top-level definitions correctly breaks it.
      */
-    private fun effectiveIndents(lines: List<String>, tabSize: Int): IntArray {
-        val size = lines.size
-        val raw = IntArray(size) { indentWidth(lines[it], tabSize) }
+    private fun effectiveIndents(raw: IntArray): IntArray {
+        val size = raw.size
         val result = IntArray(size)
 
         var above = 0

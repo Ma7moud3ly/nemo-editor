@@ -45,7 +45,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -108,37 +107,52 @@ fun NemoCodeEditor(
                 }
             }
             .onPreviewKeyEvent { keyEvent ->
-                // Handle keyboard navigation for autocomplete
-                if (autocompleteState.isVisible && keyEvent.type == KeyEventType.KeyDown) {
+                if (keyEvent.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                // Keyboard navigation for autocomplete
+                if (autocompleteState.isVisible) {
                     when (keyEvent.key) {
                         Key.DirectionDown -> {
                             autocompleteState.selectNext()
-                            true
+                            return@onPreviewKeyEvent true
                         }
 
                         Key.DirectionUp -> {
                             autocompleteState.selectPrevious()
-                            true
+                            return@onPreviewKeyEvent true
                         }
 
                         Key.Tab, Key.Enter -> {
-                            autocompleteState.getSelectedItem()?.let { item ->
+                            val item = autocompleteState.getSelectedItem()
+                            if (item != null) {
                                 state.insertCompletion(item.insertText)
                                 autocompleteState.markCompletionInserted()
+                                return@onPreviewKeyEvent true
                             }
-                            true
+                            // Nothing to accept - close the popup and let the
+                            // key do its ordinary job instead of swallowing it.
+                            autocompleteState.hide()
                         }
 
                         Key.Escape -> {
                             autocompleteState.hide()
-                            true
+                            return@onPreviewKeyEvent true
                         }
 
-                        else -> false
+                        else -> Unit
                     }
-                } else {
-                    false
                 }
+
+                // Break the line here rather than letting the platform insert
+                // the newline and then correcting the text underneath it.
+                if (keyEvent.key == Key.Enter && !settings.readOnlyState.value) {
+                    state.insertLineBreak(
+                        if (settings.enableAutoIndentState.value) autoIndentHandler else null
+                    )
+                    return@onPreviewKeyEvent true
+                }
+
+                false
             }
     ) {
         EditorContent(
@@ -205,14 +219,6 @@ private fun EditorContent(
 
     // Layout of the highlighted text, used to place indent guides on exact rows.
     var codeTextLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-
-    // Advance width of a single monospace glyph. Measured over a run of
-    // characters so the per-glyph rounding error stays negligible.
-    val textMeasurer = rememberTextMeasurer()
-    val charWidth = remember(codeTextStyle, textMeasurer) {
-        val sample = "0".repeat(CHAR_WIDTH_SAMPLE)
-        textMeasurer.measure(sample, codeTextStyle).size.width / CHAR_WIDTH_SAMPLE.toFloat()
-    }
 
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
@@ -301,7 +307,6 @@ private fun EditorContent(
                                 guides = guides,
                                 activeLine = activeLine,
                                 textLayout = { codeTextLayout },
-                                charWidth = { charWidth },
                                 color = Color(theme.lineNumber).copy(alpha = 0.30f),
                                 activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
                             )
@@ -332,6 +337,3 @@ private fun EditorContent(
         }
     }
 }
-
-/** Sample length used to derive the monospace advance width. */
-private const val CHAR_WIDTH_SAMPLE = 32
