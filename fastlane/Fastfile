@@ -108,6 +108,13 @@ platform :desktop do
     UI.success("✅ Linux .deb built")
   end
 
+  desc "Build Linux RPM package (release tags only)"
+  lane :linux_rpm do
+    setup_env
+    gradlew ":composeApp:packageReleaseRpm"
+    UI.success("✅ Linux .rpm built")
+  end
+
   desc "Build Windows desktop binary"
   lane :windows do
     setup_env

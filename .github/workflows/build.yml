@@ -47,6 +47,20 @@ jobs:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
 
+      # Linux RPM - releases only. jpackage shells out to rpmbuild, which is
+      # not present on ubuntu-latest.
+      - name: Install rpmbuild
+        if: startsWith(github.ref, 'refs/tags/')
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Build Linux RPM
+        if: startsWith(github.ref, 'refs/tags/')
+        run: fastlane desktop linux_rpm
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+
       # WASM
       - run: fastlane wasm build
         env:
@@ -67,7 +81,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
-          path: composeApp/build/compose/binaries/main-release/deb/*.deb
+          path: |
+            composeApp/build/compose/binaries/main-release/deb/*.deb
+            composeApp/build/compose/binaries/main-release/rpm/*.rpm
 
   # ---- Build Windows desktop ----
   build-windows:
@@ -159,6 +175,7 @@ jobs:
             release/**/*.apk
             release/**/*.zip
             release/**/*.deb
+            release/**/*.rpm
             release/**/*.exe
             release/**/*.dmg
         env:
