@@ -1,9 +1,9 @@
 name: Build & Release Nemo Editor
 
 on:
+  # Pull requests build the merge commit, so they already test what main will
+  # become and main itself is not built again. Tags build the release matrix.
   push:
-    branches:
-      - main
     tags:
       - "v*"
   pull_request:
@@ -73,6 +73,8 @@ jobs:
   build-windows:
     runs-on: windows-latest
     needs: build-linux
+    # Desktop builds for (Windows & Mac) only run for a release tag to reduce build time.
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -106,6 +108,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     needs: build-windows
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1

@@ -17,6 +17,17 @@ def gradlew(*tasks)
 end
 
 
+# Version used in artifact file names.
+#
+# GITHUB_REF_NAME is "<pr-number>/merge" on pull_request events, and a tag can
+# carry characters that are not safe in a file name, so anything outside the
+# safe set becomes a dash.
+def release_version
+  raw = ENV["GITHUB_REF_NAME"].to_s
+  raw = "dev" if raw.empty?
+  raw.gsub(/[^A-Za-z0-9._-]/, "-")
+end
+
 def zip_directory(input_dir, output_file)
   entries = Dir.entries(input_dir) - %w[. ..]
   ::Zip::File.open(output_file, ::Zip::File::CREATE) do |zipfile|
@@ -74,7 +85,7 @@ platform :android do
     gradle_task = is_tag ? ":androidApp:assembleDefaultRelease" : ":androidApp:assembleDefaultDebug"
     gradlew gradle_task
 
-    version = ENV["GITHUB_REF_NAME"] || "dev"
+    version = release_version
     apk_file = if is_tag
                  Dir["../androidApp/build/outputs/apk/default/release/*.apk"].first
                else
@@ -124,7 +135,7 @@ platform :wasm do
     FileUtils.rm_f(zip_file)
     zip_directory(wasm_dir, zip_file)
 
-    version = ENV["GITHUB_REF_NAME"] || "dev"
+    version = release_version
     final_name = "../nemo-editor-#{version}.zip"
     FileUtils.mv(zip_file, final_name)
     UI.success("✅ Renamed WASM bundle to #{final_name}")
