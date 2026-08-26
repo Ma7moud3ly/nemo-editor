@@ -1,7 +1,6 @@
 package io.ma7moud3ly.nemo.platform
 
 import android.content.Intent
-import android.net.Uri
 import io.ma7moud3ly.nemo.AndroidApplication
 import io.ma7moud3ly.nemo.managers.FilesManager.Companion.asNemoFile
 import io.ma7moud3ly.nemo.managers.FilesManager.Companion.extensions
@@ -28,7 +27,6 @@ actual suspend fun FileKit.getPlatformDirectoryPicker(
     dialogSettings: FileKitDialogSettings,
 ): PlatformFile? {
     return FileKit.openDirectoryPicker(
-        title = title,
         directory = directory,
         dialogSettings = dialogSettings
     )
@@ -55,10 +53,9 @@ actual suspend fun FileKit.platformSaveFileAs(file: NemoFile, content: String): 
 actual suspend fun FileKit.platformPickFile(): PlatformFile? {
     val platformFile = FileKit.openFilePicker(
         type = FileKitType.File(extensions),
-        title = "Open File",
         dialogSettings = FileKitDialogSettings.createDefault(),
     )
-    val uri = Uri.parse(platformFile.toString())
+    val uri = platformFile.toString().toUri()
     val context = AndroidApplication.getAppContext()
     context?.contentResolver?.takePersistableUriPermission(
         uri, Intent.FLAG_GRANT_READ_URI_PERMISSION

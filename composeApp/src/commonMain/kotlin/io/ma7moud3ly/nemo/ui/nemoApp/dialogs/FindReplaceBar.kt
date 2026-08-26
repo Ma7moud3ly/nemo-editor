@@ -75,7 +75,7 @@ import nemoeditor.composeapp.generated.resources.find_replace_bar_replace_compac
 import nemoeditor.composeapp.generated.resources.find_replace_bar_replace_current
 import nemoeditor.composeapp.generated.resources.find_replace_bar_toggle_replace
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Preview(widthDp = 800)

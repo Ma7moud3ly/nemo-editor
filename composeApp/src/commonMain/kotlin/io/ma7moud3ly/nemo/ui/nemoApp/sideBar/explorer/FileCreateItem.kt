@@ -24,7 +24,7 @@ import nemoeditor.composeapp.generated.resources.create_item_dialog_create
 import nemoeditor.composeapp.generated.resources.create_item_dialog_invalid_chars
 import nemoeditor.composeapp.generated.resources.create_item_dialog_name_empty
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

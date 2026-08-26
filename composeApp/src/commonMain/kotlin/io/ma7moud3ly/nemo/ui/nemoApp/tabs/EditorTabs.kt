@@ -34,7 +34,7 @@ import io.ma7moud3ly.nemo.ui.nemoApp.iconColor
 import nemoeditor.composeapp.generated.resources.Res
 import nemoeditor.composeapp.generated.resources.editor_tabs_close
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

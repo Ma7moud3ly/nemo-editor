@@ -6,7 +6,7 @@ object FormatterFactory {
     fun getFormatter(language: Language): CodeFormatter? {
         return when (language) {
             Language.KOTLIN -> KotlinFormatter()
-            Language.PYTHON -> PythonFormatter()
+            Language.PYTHON, Language.MICRO_PYTHON -> PythonFormatter()
             else -> null
         }
     }

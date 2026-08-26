@@ -9,6 +9,7 @@ class LanguagesManager {
         LanguageDetails("Kotlin", Language.KOTLIN, "kt", "🟣", Color(0xFF7F52FF), "Modern JVM language"),
         LanguageDetails("Java", Language.JAVA, "java", "☕", Color(0xFFE76F00), "Object-oriented programming"),
         LanguageDetails("Python", Language.PYTHON, "py", "🐍", Color(0xFF3776AB), "General-purpose scripting"),
+        LanguageDetails("MicroPython", Language.MICRO_PYTHON, "mpy", "🤖", Color(0xFF2B7489), "Python for microcontrollers"),
         LanguageDetails("JavaScript", Language.JAVASCRIPT, "js", "🟨", Color(0xFFF7DF1E), "Web scripting language"),
         LanguageDetails("TypeScript", Language.TYPESCRIPT, "ts", "🔷", Color(0xFF3178C6), "Typed JavaScript"),
         LanguageDetails("React JSX", Language.REACT_JSX, "jsx", "⚛️", Color(0xFF61DAFB), "React components"),

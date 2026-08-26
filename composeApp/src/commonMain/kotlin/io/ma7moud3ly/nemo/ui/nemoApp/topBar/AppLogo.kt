@@ -36,7 +36,7 @@ import io.ma7moud3ly.nemo.ui.AppTheme
 import nemoeditor.composeapp.generated.resources.Res
 import nemoeditor.composeapp.generated.resources.logo_flipped
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

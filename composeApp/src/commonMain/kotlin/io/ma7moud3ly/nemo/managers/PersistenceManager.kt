@@ -34,7 +34,7 @@ import kotlinx.serialization.json.Json
  * @param ioDispatcher Coroutine dispatcher for IO operations
  * @param platform Current platform
  */
-internal class PersistenceManager(
+class PersistenceManager(
     private val tabsManager: TabsManager,
     private val filesManager: FilesManager,
     private val editorSettings: EditorSettings,

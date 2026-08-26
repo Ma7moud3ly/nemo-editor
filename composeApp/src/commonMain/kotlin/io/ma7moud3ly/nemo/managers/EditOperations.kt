@@ -272,7 +272,7 @@ class EditOperations(
     private fun getCommentPrefix(language: Language): String {
         return when (language) {
             Language.KOTLIN, Language.JAVA, Language.JAVASCRIPT, Language.CPP -> "//"
-            Language.PYTHON -> "#"
+            Language.PYTHON, Language.MICRO_PYTHON -> "#"
             Language.HTML, Language.XML -> "<!--"
             Language.CSS -> "/*"
             else -> "//"

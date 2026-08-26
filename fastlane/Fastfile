@@ -70,14 +70,15 @@ platform :android do
   lane :build_apk do
     setup_env
     is_tag = ENV["GITHUB_REF"].to_s.start_with?("refs/tags/")
-    gradle_task = is_tag ? "assembleDefaultRelease" : "assembleDefaultDebug"
+    # The APK is produced by :androidApp; :composeApp is a KMP library.
+    gradle_task = is_tag ? ":androidApp:assembleDefaultRelease" : ":androidApp:assembleDefaultDebug"
     gradlew gradle_task
 
     version = ENV["GITHUB_REF_NAME"] || "dev"
     apk_file = if is_tag
-                 Dir["../composeApp/build/outputs/apk/default/release/*.apk"].first
+                 Dir["../androidApp/build/outputs/apk/default/release/*.apk"].first
                else
-                 Dir["../composeApp/build/outputs/apk/default/debug/*.apk"].first
+                 Dir["../androidApp/build/outputs/apk/default/debug/*.apk"].first
                end
     UI.user_error!("APK not found at expected path") if apk_file.nil?
 
@@ -116,7 +117,7 @@ platform :wasm do
   desc "Build wasm/js bundle"
   lane :build do
     setup_env
-    gradlew("wasmJsBrowserDistribution")
+    gradlew(":composeApp:wasmJsBrowserDistribution")
 
     wasm_dir = "../composeApp/build/dist/wasmJs/productionExecutable"
     zip_file = "../composeApp/build/wasm-dist.zip"

@@ -91,7 +91,7 @@ import nemoeditor.composeapp.generated.resources.new_file_dialog_language
 import nemoeditor.composeapp.generated.resources.new_file_dialog_search_languages
 import nemoeditor.composeapp.generated.resources.new_file_dialog_select_language
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

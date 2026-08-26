@@ -46,7 +46,7 @@ import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.KeyboardShortcut
 import io.ma7moud3ly.nemo.ui.AppTheme
 import io.ma7moud3ly.nemo.ui.nemoApp.MyDialog
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 
 @Preview

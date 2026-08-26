@@ -1,4 +1,4 @@
-rootProject.name = "nemo-editor-root"
+rootProject.name = "NemoEditor"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -33,4 +33,5 @@ plugins {
 }
 
 include(":composeApp")
+include(":androidApp")
 include(":nemo-editor")

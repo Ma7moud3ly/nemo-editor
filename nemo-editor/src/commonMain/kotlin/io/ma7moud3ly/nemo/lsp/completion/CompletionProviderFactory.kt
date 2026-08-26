@@ -7,6 +7,7 @@ object CompletionProviderFactory {
         return when (language) {
             Language.KOTLIN -> KotlinCompletionProvider()
             Language.PYTHON -> PythonCompletionProvider()
+            Language.MICRO_PYTHON -> MicroPythonCompletionProvider()
             else -> null
         }
     }

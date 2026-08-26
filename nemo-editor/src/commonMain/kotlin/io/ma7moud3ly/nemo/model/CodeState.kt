@@ -11,6 +11,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import io.ma7moud3ly.nemo.managers.UndoRedoManager
 import io.ma7moud3ly.nemo.managers.AutoIndentHandler
+import io.ma7moud3ly.nemo.managers.diffText
 
 /**
  * State holder for the code editor with integrated undo/redo and text management
@@ -57,6 +58,13 @@ class CodeState(
         state = this,
         onContentChanges = { contentChanged = it }
     )
+
+    /**
+     * Set by [insertLineBreak] and cleared by the very next text change. If the
+     * platform also delivers its own newline for that same key press, the flag
+     * is still up and the duplicate is dropped. See [handleTextChange].
+     */
+    private var lineBreakJustHandled: Boolean = false
 
     /**
      * Current cursor position (zero-based)
@@ -200,6 +208,48 @@ class CodeState(
     }
 
     /**
+     * Break the line at the caret, carrying the indentation of the line being
+     * left, and place the caret after that indentation. Any selected text is
+     * replaced.
+     *
+     * This is driven by the Enter key rather than by the resulting text change.
+     * Rewriting the text from inside a text-change callback leaves the platform
+     * input method holding a stale copy of the editing state, and on Android it
+     * reasserts its own caret afterwards - which is what dropped the caret to
+     * column zero. Inserting the newline and its indentation together, before
+     * the input method ever sees a newline, removes that exchange entirely.
+     *
+     * @param autoIndentHandler supplies the indentation; pass `null` to insert a
+     *   bare line break.
+     */
+    internal fun insertLineBreak(autoIndentHandler: AutoIndentHandler?) {
+        val current = value
+        val text = current.text
+        val start = minOf(current.selection.start, current.selection.end)
+            .coerceIn(0, text.length)
+        val end = maxOf(current.selection.start, current.selection.end)
+            .coerceIn(start, text.length)
+
+        val inserted = "\n" + autoIndentHandler?.indentForLineBreakAt(text, start).orEmpty()
+
+        if (end > start) {
+            undoRedoManager.recordAction(
+                FindReplaceAction.Delete(start, text.substring(start, end))
+            )
+        }
+        undoRedoManager.recordAction(FindReplaceAction.Insert(start, inserted))
+
+        val caret = start + inserted.length
+        lineBreakJustHandled = true
+        updateCodeValue(
+            TextFieldValue(
+                text = text.substring(0, start) + inserted + text.substring(end),
+                selection = TextRange(caret)
+            )
+        )
+    }
+
+    /**
      * Handle text field value change with undo/redo recording and auto-indent
      *
      * This method encapsulates all the logic for handling user text input:
@@ -219,24 +269,36 @@ class CodeState(
         val oldText = oldValue.text
         val newText = newValue.text
 
-        // Record changes for undo/redo
-        if (oldText != newText) {
-            if (newText.length > oldText.length) {
-                // Text was inserted
-                val insertPos = newValue.selection.start - (newText.length - oldText.length)
-                val insertedText = newText.substring(insertPos, newValue.selection.start)
+        // Record changes for undo/redo. The edit is derived from the two texts
+        // rather than from the reported caret, which some input methods and the
+        // web backend have not yet moved when the change arrives - and which
+        // previously made these offsets run off the end of the string.
+        val edit = diffText(oldText, newText)
+
+        // Enter is normally handled by insertLineBreak, straight off the key
+        // event, so the newline and its indentation land as one edit that no
+        // input method can reorder. Should the platform deliver its own newline
+        // for that same key press as well, drop it rather than break the line
+        // twice.
+        val justBrokeLine = lineBreakJustHandled
+        lineBreakJustHandled = false
+        if (justBrokeLine &&
+            edit != null &&
+            edit.removed.isEmpty() &&
+            (edit.inserted == "\n" || edit.inserted == "\r\n")
+        ) {
+            return true
+        }
+
+        if (edit != null) {
+            if (edit.removed.isNotEmpty()) {
                 undoRedoManager.recordAction(
-                    FindReplaceAction.Insert(insertPos, insertedText)
+                    FindReplaceAction.Delete(edit.start, edit.removed)
                 )
-            } else if (newText.length < oldText.length) {
-                // Text was deleted
-                val deletePos = newValue.selection.start
-                val deletedText = oldText.substring(
-                    deletePos,
-                    deletePos + (oldText.length - newText.length)
-                )
+            }
+            if (edit.inserted.isNotEmpty()) {
                 undoRedoManager.recordAction(
-                    FindReplaceAction.Delete(deletePos, deletedText)
+                    FindReplaceAction.Insert(edit.start, edit.inserted)
                 )
             }
         }

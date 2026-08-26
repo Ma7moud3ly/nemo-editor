@@ -24,15 +24,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ma7moud3ly.nemo.lsp.completion.AutocompleteState
@@ -45,22 +50,31 @@ import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 
 /**
- * Autocomplete popup with keyboard navigation
+ * Autocomplete popup, placed against the caret.
+ *
+ * The popup sits below the caret line, or above it when there is not enough
+ * room below, and is kept inside the editor viewport either way.
  *
  * @param state The code editor state
  * @param settings The editor settings
- * @param scrollOffset The current vertical scroll offset of the editor
  * @param autocompleteState State holder for autocomplete
+ * @param caretRect Caret bounds in pixels, relative to the top-left of the code
+ *   area and already adjusted for scrolling. `null` before the code has been
+ *   laid out.
+ * @param viewportSize Size of the visible code area, in pixels.
  */
 @Composable
 fun AutocompletePopup(
     state: CodeState,
     settings: EditorSettings,
-    scrollOffset: Int = 0,
-    autocompleteState: AutocompleteState
+    autocompleteState: AutocompleteState,
+    caretRect: () -> Rect?,
+    viewportSize: () -> IntSize
 ) {
     // Only show if autocomplete is enabled and not in read-only mode
     if (!settings.enableAutocompleteState.value ||
@@ -73,25 +87,12 @@ fun AutocompletePopup(
     }
 
     val theme by remember { settings.themeState }
-    val fontSize = settings.fontSizeState.value
-    val lineHeight = fontSize * 1.5f
     val coroutineScope = rememberCoroutineScope()
-
-    // Calculate line numbers width using autocomplete state
-    val lineNumbersWidth = remember(
-        settings.showLineNumbersState.value,
-        state.totalLines
-    ) {
-        autocompleteState.calculateLineNumbersWidth(
-            showLineNumbers = settings.showLineNumbersState.value,
-            totalLines = state.totalLines
-        )
-    }
 
     // Trigger autocomplete when text or cursor changes (with debounce)
     LaunchedEffect(state.code, state.cursorPosition) {
         // Small delay to debounce rapid typing
-        delay(100)
+        delay(100.milliseconds)
 
         val cursorPos = state.cursorPosition
         val textBeforeCursor = state.code.take(cursorPos)
@@ -112,24 +113,34 @@ fun AutocompletePopup(
     // Don't render if not showing
     if (!autocompleteState.isVisible) return
 
+    val caret = caretRect() ?: return
+    val viewport = viewportSize()
+    if (viewport.width == 0 || viewport.height == 0) return
+
     val listState = rememberLazyListState()
     val density = LocalDensity.current
 
-    // Calculate cursor position
-    val currentLineIndex = state.currentLine - 1
+    // Measured on the first frame; until then assume the tallest the popup can
+    // get, so the first placement errs towards flipping above rather than
+    // overlapping the line being typed.
+    var popupHeight by remember { mutableIntStateOf(0) }
 
-    // Calculate position of the NEXT line (below current line)
-    val currentLinePositionPx = (currentLineIndex * lineHeight).toInt()
-    val nextLinePositionPx = currentLinePositionPx + lineHeight.toInt()
-    val visiblePositionPx = nextLinePositionPx - scrollOffset
-
-    val verticalOffsetDp = with(density) {
-        visiblePositionPx.toDp() + 40.dp
+    val gap = with(density) { POPUP_GAP.toPx() }
+    val width = with(density) { POPUP_WIDTH.toPx() }
+    val height = if (popupHeight > 0) {
+        popupHeight.toFloat()
+    } else {
+        with(density) { POPUP_MAX_HEIGHT.toPx() }
     }
 
-    val horizontalOffsetDp = with(density) {
-        lineNumbersWidth.toDp() + 8.dp
-    }
+    // Prefer below the caret line. Flip above only when the popup does not fit
+    // below and does fit above, so it never covers what is being typed.
+    val below = caret.bottom + gap
+    val above = caret.top - gap - height
+    val y = if (below + height <= viewport.height || above < 0f) below else above
+
+    val offsetX = caret.left.coerceIn(0f, (viewport.width - width).coerceAtLeast(0f))
+    val offsetY = y.coerceIn(0f, (viewport.height - height).coerceAtLeast(0f))
 
     // Auto-scroll to selected item
     LaunchedEffect(autocompleteState.selectedIndex) {
@@ -142,17 +153,13 @@ fun AutocompletePopup(
 
     Box(
         modifier = Modifier
-            .offset {
-                IntOffset(
-                    x = with(density) { horizontalOffsetDp.roundToPx() },
-                    y = with(density) { verticalOffsetDp.roundToPx() }
-                )
-            }
+            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+            .onSizeChanged { popupHeight = it.height }
     ) {
         Surface(
             modifier = Modifier
-                .width(320.dp)
-                .heightIn(max = 250.dp),
+                .width(POPUP_WIDTH)
+                .heightIn(max = POPUP_MAX_HEIGHT),
             shape = RoundedCornerShape(8.dp),
             color = Color(theme.background),
             shadowElevation = 8.dp,
@@ -241,3 +248,9 @@ private fun AutocompleteItem(
         )
     }
 }
+
+private val POPUP_WIDTH = 320.dp
+private val POPUP_MAX_HEIGHT = 250.dp
+
+/** Space left between the caret line and the popup. */
+private val POPUP_GAP = 4.dp

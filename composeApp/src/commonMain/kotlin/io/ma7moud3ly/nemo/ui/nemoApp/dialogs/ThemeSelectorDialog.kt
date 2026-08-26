@@ -37,7 +37,7 @@ import nemoeditor.composeapp.generated.resources.Res
 import nemoeditor.composeapp.generated.resources.theme_selector_close
 import nemoeditor.composeapp.generated.resources.theme_selector_title
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable

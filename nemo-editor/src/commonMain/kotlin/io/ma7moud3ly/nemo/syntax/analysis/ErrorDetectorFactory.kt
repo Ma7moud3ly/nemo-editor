@@ -6,7 +6,7 @@ object ErrorDetectorFactory {
     fun getErrorDetector(language: Language): ErrorDetector? {
         return when (language) {
             Language.KOTLIN -> KotlinErrorDetector()
-            Language.PYTHON -> PythonErrorDetector()
+            Language.PYTHON, Language.MICRO_PYTHON -> PythonErrorDetector()
             else -> null
         }
     }
