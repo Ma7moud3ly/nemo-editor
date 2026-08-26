@@ -47,6 +47,14 @@ Build APK (debug on branch, release on tag)
 
 Build Linux desktop binary
 
+### desktop linux_rpm
+
+```sh
+[bundle exec] fastlane desktop linux_rpm
+```
+
+Build Linux RPM package (release tags only)
+
 ### desktop windows
 
 ```sh
