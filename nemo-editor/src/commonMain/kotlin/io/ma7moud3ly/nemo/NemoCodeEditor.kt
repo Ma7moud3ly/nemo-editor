@@ -41,6 +41,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ma7moud3ly.nemo.lsp.completion.AutocompleteState
@@ -175,13 +178,9 @@ fun NemoCodeEditor(
             readOnly = settings.readOnlyState.value,
             scrollState = scrollState,
             guides = { indentGuides },
-            activeLine = { state.currentLine - 1 }
-        )
-
-        AutocompletePopup(
+            activeLine = { state.currentLine - 1 },
             state = state,
             settings = settings,
-            scrollOffset = scrollState.value,
             autocompleteState = autocompleteState
         )
     }
@@ -200,7 +199,10 @@ private fun EditorContent(
     readOnly: Boolean,
     scrollState: ScrollState,
     guides: () -> IndentGuides?,
-    activeLine: () -> Int
+    activeLine: () -> Int,
+    state: CodeState,
+    settings: EditorSettings,
+    autocompleteState: AutocompleteState
 ) {
     val horizontalScrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -217,8 +219,31 @@ private fun EditorContent(
         )
     }
 
-    // Layout of the highlighted text, used to place indent guides on exact rows.
+    // Layout of the highlighted text. Indent guides read exact row bounds from
+    // it, and the autocomplete popup reads the caret rectangle.
     var codeTextLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    // Bounds of the visible code area, the viewport the popup is placed within.
+    var codeAreaSize by remember { mutableStateOf(IntSize.Zero) }
+
+    val textPadding = with(LocalDensity.current) { 4.dp.toPx() }
+
+    // Caret bounds in code-area coordinates: read off the real text layout, then
+    // shifted by the scroll offsets and the padding the text sits behind. Taking
+    // it from the layout keeps it right at any density and font size, which an
+    // estimate from line height cannot be.
+    val caretRect: () -> Rect? = {
+        val layout = codeTextLayout
+        if (layout == null) {
+            null
+        } else {
+            val offset = code.selection.start.coerceIn(0, layout.layoutInput.text.length)
+            layout.getCursorRect(offset).translate(
+                translateX = textPadding - horizontalScrollState.value,
+                translateY = -scrollState.value.toFloat()
+            )
+        }
+    }
 
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
@@ -275,13 +300,16 @@ private fun EditorContent(
             }
         }
 
-        // Editor area
+        // Editor area. Its own bounds are the viewport the autocomplete popup
+        // is placed within, so the popup is a child of this box rather than of
+        // the scrolling content.
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
                 .background(Color(theme.background))
                 .padding(top = 4.dp)
+                .onSizeChanged { codeAreaSize = it }
         ) {
             val customTextSelectionColors = TextSelectionColors(
                 handleColor = Color(theme.syntax.keyword),
@@ -334,6 +362,14 @@ private fun EditorContent(
                     }
                 )
             }
+
+            AutocompletePopup(
+                state = state,
+                settings = settings,
+                autocompleteState = autocompleteState,
+                caretRect = caretRect,
+                viewportSize = { codeAreaSize }
+            )
         }
     }
 }
