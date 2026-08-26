@@ -137,7 +137,7 @@ Complete reference for all keyboard shortcuts available in the Nemo Code Editor.
 - Comments/uncomments line
 - Language-specific syntax:
   - **Kotlin/Java/JavaScript/C/C++**: `//`
-  - **Python/Shell**: `#`
+  - **Python/MicroPython**: `#`
   - **HTML/XML**: `<!-- -->`
   - **CSS**: `/* */`
 - Multi-line support
@@ -226,7 +226,7 @@ Complete reference for all keyboard shortcuts available in the Nemo Code Editor.
 
 **Trigger** (Automatic)
 - Shows when typing or after `.`
-- Kotlin and Python only
+- Kotlin, Python and MicroPython only
 
 **Navigate** (`↓` / `↑`)
 - Down or Tab: Next item
@@ -273,7 +273,7 @@ Complete reference for all keyboard shortcuts available in the Nemo Code Editor.
 
 **Autocomplete Issues?**
 1. Check settings enabled
-2. Kotlin/Python only
+2. Kotlin, Python and MicroPython only
 3. Not in read-only mode
 
 ---

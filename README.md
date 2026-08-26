@@ -2,7 +2,7 @@
 
 **Just keep coding**
 
-A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform and Compose Multiplatform. Supporting 19+ programming languages with syntax highlighting, autocomplete, and more!
+A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform and Compose Multiplatform. Dedicated language support for Kotlin, Python and MicroPython, and it opens and edits everything else.
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Compose-1.7+-4285F4?logo=jetpackcompose&logoColor=white)
@@ -30,11 +30,12 @@ A lightweight, fast, and beautiful code editor built with Kotlin Multiplatform a
 - Responsive design for all screen sizes
 
 ### 💻 Powerful Code Editor
-- **Syntax Highlighting** - 19+ languages supported
+- **Syntax Highlighting** - Kotlin, Python and MicroPython
 - **Smart Autocomplete** - Context-aware suggestions with keyboard navigation
 - **Error Detection** - Real-time syntax error highlighting
 - **Code Formatting** - Auto-format your code beautifully
 - **Auto-Indentation** - Intelligent indenting based on language
+- **Indentation Guides** - Vertical guides that reveal misaligned lines
 - **Multi-tab Editing** - Work on multiple files simultaneously
 - **Find & Replace** - Regex support, case-sensitive, whole word matching
 - **Line Numbers** - Toggle-able with gutter highlighting
@@ -80,7 +81,7 @@ cd nemo-editor
 ./gradlew :composeApp:run
 
 # Run on Android
-./gradlew :composeApp:installDebug
+./gradlew :androidApp:installGmsDebug
 
 # Run on Web
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
@@ -93,7 +94,7 @@ cd nemo-editor
 ### 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.2")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.3")
 }
 ```
 
@@ -150,28 +151,23 @@ See [complete documentation](docs/NemoCodeEditor.md) for more examples.
 
 ## 🌍 Supported Languages
 
+Three languages have dedicated support their own tokenizer, formatter, error
+detector and completion provider:
+
 | Language | Extensions | Highlighting | Formatting | Autocomplete | Errors |
 |----------|-----------|--------------|------------|--------------|--------|
 | Kotlin | .kt, .kts | ✅ | ✅ | ✅ | ✅ |
 | Python | .py | ✅ | ✅ | ✅ | ✅ |
-| Java | .java | ✅ | ✅ | ❌ | ✅ |
-| JavaScript | .js | ✅ | ✅ | ❌ | ✅ |
-| TypeScript | .ts | ✅ | ✅ | ❌ | ✅ |
-| C | .c, .h | ✅ | ✅ | ❌ | ❌ |
-| C++ | .cpp, .hpp | ✅ | ✅ | ❌ | ❌ |
-| C# | .cs | ✅ | ✅ | ❌ | ❌ |
-| Go | .go | ✅ | ✅ | ❌ | ❌ |
-| Rust | .rs | ✅ | ✅ | ❌ | ❌ |
-| Swift | .swift | ✅ | ✅ | ❌ | ❌ |
-| PHP | .php | ✅ | ✅ | ❌ | ❌ |
-| Ruby | .rb | ✅ | ✅ | ❌ | ❌ |
-| HTML | .html, .htm | ✅ | ✅ | ❌ | ❌ |
-| CSS | .css, .scss | ✅ | ✅ | ❌ | ❌ |
-| XML | .xml | ✅ | ✅ | ❌ | ❌ |
-| JSON | .json | ✅ | ✅ | ❌ | ❌ |
-| Markdown | .md | ✅ | ❌ | ❌ | ❌ |
-| SQL | .sql | ✅ | ✅ | ❌ | ❌ |
-| Shell | .sh, .bash | ✅ | ✅ | ❌ | ❌ |
+| MicroPython | .mpy | ✅ | ✅ | ✅ | ✅ |
+
+Everything else opens and edits normally; Java, JavaScript, C/C++, HTML, CSS,
+JSON, XML, Markdown, Shell, SQL and more can be created and edited, and the
+file browser recognizes them, but they fall back to a generic tokenizer and
+have no formatter, error detection or completion of their own.
+
+Adding a language means implementing `Tokenizer`, and optionally
+`CodeFormatter`, `ErrorDetector` and `CompletionProvider`, then registering it
+in the matching factory. Contributions welcome.
 
 ---
 
@@ -255,35 +251,44 @@ See [complete shortcuts guide](docs/keyboard_shortcuts_readme.md).
 ## 🏗️ Building from Source
 
 ### Android
+
+The app lives in `:androidApp`; `:composeApp` is a shared library and produces
+no APK. There are two flavours: `gms` includes Firebase analytics and
+crashlytics, `default` is free of them.
+
 ```bash
 # Debug APK
-./gradlew :composeApp:assembleDebug
+./gradlew :androidApp:assembleGmsDebug
 
 # Release APK
-./gradlew :composeApp:assembleRelease
+./gradlew :androidApp:assembleGmsRelease
 
-# Output: composeApp/build/outputs/apk/
+# Analytics-free build
+./gradlew :androidApp:assembleDefaultRelease
+
+# Output: androidApp/build/outputs/apk/
 ```
 
 ### Desktop
 
-**Windows (MSI)**
 ```bash
-./gradlew :composeApp:packageMsi
-# Output: composeApp/build/compose/binaries/main/msi/
+# Windows
+./gradlew :composeApp:packageReleaseMsi
+./gradlew :composeApp:packageReleaseExe
+
+# macOS
+./gradlew :composeApp:packageReleaseDmg
+
+# Linux
+./gradlew :composeApp:packageReleaseDeb
+./gradlew :composeApp:packageReleaseRpm
+
+# Output: composeApp/build/compose/binaries/main-release/
 ```
 
-**macOS (DMG)**
-```bash
-./gradlew :composeApp:packageDmg
-# Output: composeApp/build/compose/binaries/main/dmg/
-```
-
-**Linux (DEB)**
-```bash
-./gradlew :composeApp:packageDeb
-# Output: composeApp/build/compose/binaries/main/deb/
-```
+Each installer is built by `jpackage` on its own platform. The RPM target
+additionally needs `rpmbuild` on the build machine (`apt install rpm` on
+Debian-based systems).
 
 ### Web (WASM)
 ```bash
@@ -293,6 +298,13 @@ See [complete shortcuts guide](docs/keyboard_shortcuts_readme.md).
 # Production
 ./gradlew :composeApp:wasmJsBrowserDistribution
 # Output: composeApp/build/dist/wasmJs/productionExecutable/
+```
+
+### Library
+
+```bash
+# Publish to Maven Local for use in another project
+./gradlew :nemo-editor:publishToMavenLocal
 ```
 
 ---
