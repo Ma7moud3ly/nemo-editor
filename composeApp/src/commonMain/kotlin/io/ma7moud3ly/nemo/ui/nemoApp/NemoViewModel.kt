@@ -32,8 +32,7 @@ class NemoEditorViewModel : ViewModel() {
         private val DEFAULT_THEME = EditorThemes.NEMO_DARK
     }
 
-    val appVersion = "1.0.2"
-    val buildNumber = "1"
+    val appVersion = "1.0.3"
 
     private var formatManager: FormatManager? = null
     private var editOperations: EditOperations? = null

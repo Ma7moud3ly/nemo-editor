@@ -12,7 +12,7 @@ Complete reference for integrating NemoCodeEditor into your Kotlin Multiplatform
 ## 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.2")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.3")
 }
 ```
 
@@ -27,8 +27,8 @@ Main editor component.
 @Composable
 fun NemoCodeEditor(
     state: CodeState,
-    settings: EditorSettings,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    settings: EditorSettings = EditorSettings()
 )
 ```
 
@@ -46,8 +46,10 @@ Manages editor content, cursor, and history.
 ### Constructor
 ```kotlin
 CodeState(
-    code: String = "",
-    language: Language = Language.KOTLIN
+    initialCode: String = "",
+    language: Language,
+    isDirty: Boolean = false,
+    initialCursorPosition: Int = initialCode.length
 )
 ```
 
@@ -57,6 +59,11 @@ CodeState(
 |----------|------|-------------|
 | `code` | `String` | Current code content |
 | `language` | `Language` | Programming language |
+| `cursorPosition` | `Int` | Caret offset, zero-based |
+| `selection` | `TextRange` | Current selection |
+| `totalLines` | `Int` | Number of lines |
+| `currentLine` | `Int` | Line the caret is on, one-based |
+| `contentChanged` | `Boolean` | Whether there are unsaved changes |
 
 ### Methods
 ```kotlin
@@ -65,6 +72,8 @@ fun redo()
 fun canUndo(): Boolean
 fun canRedo(): Boolean
 fun clearHistory()
+fun updateText(newText: String, newCursorPosition: Int = newText.length)
+fun setSelection(start: Int, end: Int)
 // Change tracking
 fun commitChanges()  // Mark as saved
 ```
@@ -132,13 +141,15 @@ Controls editor appearance and behavior.
 ### Constructor
 ```kotlin
 EditorSettings(
-    theme: EditorTheme = EditorThemes.NEMO_DARK,
-    fontSize: Int = 14,
+    theme: EditorTheme = EditorThemes.VS_CODE_DARK,
     tabSize: Int = 4,
     useTabs: Boolean = false,
     showLineNumbers: Boolean = true,
-    enableAutocomplete: Boolean = true,
+    showIndentGuides: Boolean = true,
+    fontSize: Int = 14,
+    fontFamily: String = "JetBrains Mono",
     enableAutoIndent: Boolean = true,
+    enableAutocomplete: Boolean = true,
     readOnly: Boolean = false
 )
 ```
@@ -154,71 +165,98 @@ All properties are exposed as `MutableState` for reactive updates:
 | `tabSizeState` | `MutableState<Int>` | Tab width (2-8) |
 | `useTabsState` | `MutableState<Boolean>` | Use tabs vs spaces |
 | `showLineNumbersState` | `MutableState<Boolean>` | Show line numbers |
+| `showIndentGuidesState` | `MutableState<Boolean>` | Show indentation guides |
 | `enableAutocompleteState` | `MutableState<Boolean>` | Enable autocomplete |
 | `enableAutoIndentState` | `MutableState<Boolean>` | Enable auto-indent |
 | `readOnlyState` | `MutableState<Boolean>` | Read-only mode |
 
 ### Methods
 ```kotlin
-fun zoomIn()
-fun zoomOut()
+fun zoomIn(value: Int = 2)
+fun zoomOut(value: Int = 2)
+fun setFontSize(value: Int)
+fun setTabSize(value: Int)
+fun increaseTabSize(value: Int = 1)
+fun decreaseTabSize(value: Int = 1)
 fun toggleLinesNumber()
+fun toggleIndentGuides()
 fun toggleReadOnly()
+fun getIndentString(): String
 ```
 
 ---
 
 ## 🌍 Supported Languages
+
 ```kotlin
 enum class Language {
-    KOTLIN, JAVA, PYTHON, JAVASCRIPT, TYPESCRIPT,
-    C, CPP, CSHARP, GO, RUST, SWIFT, PHP, RUBY,
-    HTML, CSS, XML, JSON, MARKDOWN, SQL, SHELL
+    KOTLIN, JAVA, PYTHON, MICRO_PYTHON, JAVASCRIPT, TYPESCRIPT,
+    REACT_JSX, REACT_TSX, HTML, CSS, JSON, XML, MARKDOWN,
+    C, CPP, C_HEADER, RUST, GO, SWIFT, DART, PHP, RUBY,
+    SHELL, SQL, YAML, TOML, GRADLE, TEXT, BLANK
 }
 ```
 
-#### ✅ Syntax Highlighting
-All languages support full syntax highlighting with color-coded:
-- Keywords
-- Types and classes
-- Functions and methods
-- Variables
-- Strings and characters
-- Numbers
-- Comments
-- Operators
-- Punctuation
+Any value can be passed to `CodeState`, but only three have a dedicated
+implementation behind them. The rest fall back to a generic tokenizer and have
+no formatter, error detector or completion provider.
 
-#### ✅ Code Formatting
-Supported languages include:
-- Smart indentation
-- Bracket matching
-- Line wrapping
-- Whitespace normalization
-- Language-specific rules (e.g., Python indentation, Kotlin/Java style)
+| Capability | Kotlin | Python | MicroPython | Others |
+|------------|--------|--------|-------------|--------|
+| Syntax highlighting | ✅ | ✅ | ✅ | generic fallback |
+| Code formatting | ✅ | ✅ | ✅ | ❌ |
+| Autocomplete | ✅ | ✅ | ✅ | ❌ |
+| Error detection | ✅ | ✅ | ✅ | ❌ |
+| Auto-indentation | ✅ | ✅ | ✅ | Java, JavaScript only |
 
-**Available for:** Kotlin, Python
+#### Syntax Highlighting
+Color-coded keywords, types and classes, functions and methods, variables,
+strings, numbers, comments, operators and punctuation.
 
-#### ✅ Autocomplete
-Context-aware code suggestions including:
-- Keywords
-- Built-in functions
-- Types and classes
-- Variables in scope
-- Methods after dot notation
-- Smart snippets
+#### Code Formatting
+Smart indentation, bracket matching, whitespace normalisation, and
+language-specific rules such as Python block indentation or Kotlin brace style.
 
-**Available for:** Kotlin, Python
+#### Autocomplete
+Keywords, built-in functions, types and classes, variables in scope, methods
+after dot notation, and snippets.
 
+#### Error Detection
+- **Kotlin** — missing brackets, syntax errors
+- **Python / MicroPython** — indentation errors, missing colons, syntax errors
 
-#### ✅ Error Detection
-Real-time syntax error highlighting:
-- **Kotlin:** Missing brackets, semicolons, syntax errors
-- **Python:** Indentation errors, missing colons, syntax errors
-- **Java:** Missing semicolons, bracket mismatches, syntax errors
-- **JavaScript/TypeScript:** Missing brackets, semicolons, syntax errors
+---
 
-**Available for:** Kotlin, Python
+## 📐 Indentation Guides
+
+Vertical guides drawn at each indentation level. They matter most in
+indentation-scoped languages, where nothing but whitespace closes a block.
+
+Levels come from the indentation the file actually uses rather than multiples
+of the tab size, so a line out of alignment with its siblings gains its own
+guide:
+
+```python
+def foo():
+   print(1)     # establishes the body at column 3
+    print(2)    # deeper, so it gets a guide at column 3
+```
+
+A blank line keeps a guide running only while the block continues, and the
+guide containing the caret is emphasised.
+
+Enabled by default; control it with `showIndentGuides` on `EditorSettings`, or
+`toggleIndentGuides()` at runtime. Guides assume space indentation — with
+`useTabs = true`, alignment can drift.
+
+---
+
+## 🌐 Adding a Language
+
+1. Implement `Tokenizer` and register it in `TokenizerFactory`
+2. Optionally implement `CodeFormatter`, `ErrorDetector` and
+   `CompletionProvider`, registering each in its matching factory
+3. Add the case to `AutoIndentHandler` if the language needs indent rules
 
 ---
 
@@ -228,22 +266,26 @@ Real-time syntax error highlighting:
 ```kotlin
 // Dark themes
 EditorThemes.NEMO_DARK
+EditorThemes.NEMO_SUNSET
+EditorThemes.VS_CODE_DARK
 EditorThemes.MONOKAI
 EditorThemes.DRACULA
-EditorThemes.ONE_DARK
-EditorThemes.NORD
-EditorThemes.GRUVBOX_DARK
+EditorThemes.NIGHT_OWL
 EditorThemes.SOLARIZED_DARK
-EditorThemes.MATERIAL_PALENIGHT
-EditorThemes.ATOM_ONE_DARK
-EditorThemes.TOKYO_NIGHT
+EditorThemes.BREEZE
+EditorThemes.CANDY
+EditorThemes.CRIMSON
+EditorThemes.FALCON
+EditorThemes.MEADOW
+EditorThemes.MIDNIGHT
+EditorThemes.RAINDROP
+EditorThemes.SUNSET
 
 // Light themes
 EditorThemes.NEMO_LIGHT
+EditorThemes.VS_CODE_LIGHT
 EditorThemes.GITHUB_LIGHT
 EditorThemes.SOLARIZED_LIGHT
-EditorThemes.GRUVBOX_LIGHT
-EditorThemes.ATOM_ONE_LIGHT
 ```
 
 ### Custom Theme

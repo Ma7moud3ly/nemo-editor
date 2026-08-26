@@ -55,7 +55,6 @@ import io.ma7moud3ly.nemo.ui.AppTheme
 import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.ui.nemoApp.welcome.AppSlogan
 import nemoeditor.composeapp.generated.resources.Res
-import nemoeditor.composeapp.generated.resources.about_dialog_build
 import nemoeditor.composeapp.generated.resources.about_dialog_close
 import nemoeditor.composeapp.generated.resources.about_dialog_copyright
 import nemoeditor.composeapp.generated.resources.about_dialog_description
@@ -67,6 +66,7 @@ import nemoeditor.composeapp.generated.resources.about_dialog_website
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import kotlin.time.Duration.Companion.milliseconds
 
 @Preview
 @Composable
@@ -74,7 +74,6 @@ private fun AboutDialogPreview() {
     AppTheme(theme = EditorThemes.NEMO_DARK) {
         AboutNemoDialog(
             appVersion = "1.0.0",
-            buildNumber = "42",
             onDismiss = {}
         )
     }
@@ -84,13 +83,12 @@ private fun AboutDialogPreview() {
 @Composable
 internal fun AboutNemoDialog(
     appVersion: String,
-    buildNumber: String = "",
     onDismiss: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(50)
+        delay(50.milliseconds)
         isVisible = true
     }
 
@@ -146,10 +144,7 @@ internal fun AboutNemoDialog(
                         AppSlogan()
                         Spacer(Modifier.height(32.dp))
 
-                        SectionVersion(
-                            appVersion = appVersion,
-                            buildNumber = buildNumber
-                        )
+                        SectionVersion(appVersion)
 
                         Spacer(Modifier.height(24.dp))
 
@@ -185,10 +180,7 @@ internal fun AboutNemoDialog(
 }
 
 @Composable
-private fun SectionVersion(
-    appVersion: String,
-    buildNumber: String
-) {
+private fun SectionVersion(appVersion: String) {
     // Version info card
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -200,9 +192,23 @@ private fun SectionVersion(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            InfoRow(label = stringResource(Res.string.about_dialog_version), value = appVersion)
-            if (buildNumber.isNotEmpty()) {
-                InfoRow(label = stringResource(Res.string.about_dialog_build), value = buildNumber)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(Res.string.about_dialog_version),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    appVersion,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -304,31 +310,6 @@ private fun DialogBackgroundDecoration() {
                         )
                     )
                 )
-        )
-    }
-}
-
-@Composable
-private fun InfoRow(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.SemiBold
         )
     }
 }
