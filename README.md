@@ -94,7 +94,7 @@ cd nemo-editor
 ### 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.3")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.4")
 }
 ```
 
