@@ -69,8 +69,8 @@ internal class UndoRedoManager(
      */
     fun undo() {
         if (undoStack.isEmpty()) return
-
-        val action = undoStack.removeLast()
+        // Safe across all Android versions
+        val action = undoStack.removeAt(undoStack.lastIndex)
         redoStack.add(action)
 
         // Apply the inverse action
@@ -92,8 +92,8 @@ internal class UndoRedoManager(
      */
     fun redo() {
         if (redoStack.isEmpty()) return
-
-        val action = redoStack.removeLast()
+        // Safe across all Android versions
+        val action = redoStack.removeAt(redoStack.lastIndex)
         undoStack.add(action)
 
         // Apply the action
@@ -178,7 +178,7 @@ internal class UndoRedoManager(
     private fun updateCounts() {
         undoCountState = undoStack.size
         redoCountState = redoStack.size
-        onContentChanges(undoStack.size > 0)
+        onContentChanges(undoStack.isNotEmpty())
     }
 
     /**
