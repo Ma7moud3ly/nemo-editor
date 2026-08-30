@@ -12,7 +12,7 @@ Complete reference for integrating NemoCodeEditor into your Kotlin Multiplatform
 ## 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.3")
+    implementation("io.github.ma7moud3ly:nemo-editor:1.0.4")
 }
 ```
 
