@@ -11,10 +11,11 @@ plugins {
 }
 
 val javaVersion = libs.versions.java.version.get()
+val projectPackageName = libs.versions.project.packageName.get()
 
 kotlin {
     android {
-        namespace = "io.ma7moud3ly.nemo.shared"
+        namespace = "$projectPackageName.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -69,7 +70,7 @@ kotlin {
 }
 
 compose.resources {
-    packageOfResClass = "io.ma7moud3ly.nemo.shared.resources"
+    packageOfResClass = "$projectPackageName.shared.resources"
     publicResClass = true
 }
 
