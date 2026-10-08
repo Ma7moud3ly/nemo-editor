@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+val javaVersion = libs.versions.java.version.get()
+
 kotlin {
     android {
         namespace = "io.ma7moud3ly.nemo.shared"
@@ -17,7 +19,7 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.fromTarget(javaVersion))
         }
 
         // Workaround for CMP-9547: compose resources aren't packaged into the

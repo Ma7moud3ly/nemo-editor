@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
+val javaVersion = libs.versions.java.version.get()
+
 kotlin {
     android {
         namespace = "io.ma7moud3ly.nemo.editor"
@@ -17,7 +19,7 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.fromTarget(javaVersion))
         }
     }
 
