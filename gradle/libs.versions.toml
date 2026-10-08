@@ -6,7 +6,7 @@ project-versionName = "1.0.4"
 java-version = "17"
 android-compileSdk = "37"
 android-targetSdk = "37"
-android-minSdk = "23"
+android-minSdk = "24"
 #plugins
 agp = "9.4.1"
 kotlin = "2.4.21"
