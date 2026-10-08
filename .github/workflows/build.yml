@@ -80,8 +80,8 @@ jobs:
         with:
           name: desktop-linux
           path: |
-            composeApp/build/compose/binaries/main-release/deb/*.deb
-            composeApp/build/compose/binaries/main-release/rpm/*.rpm
+            desktopApp/build/compose/binaries/main-release/deb/*.deb
+            desktopApp/build/compose/binaries/main-release/rpm/*.rpm
 
   # ---- Build Windows desktop ----
   build-windows:
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-windows
-          path: composeApp/build/compose/binaries/main-release/exe/*.exe
+          path: desktopApp/build/compose/binaries/main-release/exe/*.exe
 
   # ---- Build macOS desktop ----
   build-macos:
@@ -149,7 +149,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-macos
-          path: composeApp/build/compose/binaries/main-release/dmg/*.dmg
+          path: desktopApp/build/compose/binaries/main-release/dmg/*.dmg
 
   # ---- Release ----
   release:

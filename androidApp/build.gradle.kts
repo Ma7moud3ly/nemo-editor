@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -15,11 +14,10 @@ if (gradle.startParameter.taskRequests.toString().contains("gms", ignoreCase = t
 
 val projectPackageName = libs.versions.project.packageName.get()
 val localProperties = getLocalProperties(rootProject)
+val javaVersion = libs.versions.java.version.get()
 
 kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
-    }
+    jvmToolchain(javaVersion.toInt())
 }
 
 android {
@@ -97,13 +95,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.toVersion(javaVersion)
+        targetCompatibility = JavaVersion.toVersion(javaVersion)
     }
 }
 
 dependencies {
-    implementation(projects.composeApp)
+    implementation(projects.shared)
     implementation(libs.runtime)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)

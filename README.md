@@ -102,13 +102,13 @@ git clone https://github.com/Ma7moud3ly/nemo-editor.git
 cd nemo-editor
 
 # Desktop app
-./gradlew :composeApp:run
+./gradlew :desktopApp:run
 
 # Android app
 ./gradlew :androidApp:installGmsDebug
 
 # Web app
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+./gradlew :webApp:wasmJsBrowserDevelopmentRun
 ```
 
 To publish the library to your local Maven repository:
