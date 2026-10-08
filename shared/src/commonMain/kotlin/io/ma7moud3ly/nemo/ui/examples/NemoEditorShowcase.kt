@@ -48,7 +48,6 @@ import io.ma7moud3ly.nemo.shared.resources.Res
 import io.ma7moud3ly.nemo.shared.resources.logo
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import io.ma7moud3ly.nemo.ui.nemoApp.topBar.NemoAnimatedLogo
 
 /* Light palette. Ink is the product's deep-ocean colour used as text on a warm-white page. */
 private val PageTop = Color(0xFFFFFDFB)

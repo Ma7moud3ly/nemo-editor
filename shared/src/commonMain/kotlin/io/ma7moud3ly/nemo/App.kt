@@ -14,9 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.ma7moud3ly.nemo.ui.AppGraph
 import io.ma7moud3ly.nemo.ui.AppTheme
-import io.ma7moud3ly.nemo.ui.nemoApp.NemoEditorViewModel
+import io.ma7moud3ly.nemo.feature.NemoEditorViewModel
 
 
 @Composable
