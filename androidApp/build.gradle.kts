@@ -103,7 +103,7 @@ android {
 }
 
 dependencies {
-    implementation(projects.composeApp)
+    implementation(projects.shared)
     implementation(libs.runtime)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)

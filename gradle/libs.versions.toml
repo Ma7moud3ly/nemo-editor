@@ -7,33 +7,33 @@ android-compileSdk = "37"
 android-targetSdk = "37"
 android-minSdk = "23"
 #plugins
-agp = "9.3.2"
-kotlin = "2.4.10"
+agp = "9.4.1"
+kotlin = "2.4.21"
 composeHotReload = "1.2.0"
-composeMultiplatform = "1.12.0"
-kotlinSerialization = "2.4.10"
+composeMultiplatform = "1.12.1"
+kotlinSerialization = "2.4.21"
 mavenPublish = "0.37.0"
 #common
-ui = "1.12.0"
-uiToolingPreview = "1.12.0"
-uiTooling = "1.12.0"
-runtime = "1.12.0"
+ui = "1.12.1"
+uiToolingPreview = "1.12.1"
+uiTooling = "1.12.1"
+runtime = "1.12.1"
 lifecycle-runtime = "2.11.0"
 kotlinx-coroutines = "1.11.0"
 navigation-compose = "2.9.2"
 serialization-json = "1.11.0"
-componentsResources = "1.12.0"
-foundation = "1.12.0"
+componentsResources = "1.12.1"
+foundation = "1.12.1"
 material3 = "1.9.0"
 materialIconsExtended = "1.7.3"
 kotlinxDatetime = "0.8.0"
-adaptive = "1.2.0"
-filekit = "0.15.0"
+adaptive = "1.3.0"
+filekit = "0.16.0"
 multiplatformSettings = "1.3.0"
 #android
-androidx-core = "1.19.0"
+androidx-core = "1.19.1"
 androidx-activity = "1.13.0"
-firebaseBom = "34.18.0"
+firebaseBom = "35.0.0"
 googleServices = "4.5.0"
 firebaseCrashlytics = "3.0.8"
 
@@ -75,6 +75,7 @@ composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "com
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization" }
 #android
 androidApplication = { id = "com.android.application", version.ref = "agp" }

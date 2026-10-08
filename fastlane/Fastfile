@@ -81,7 +81,7 @@ platform :android do
   lane :build_apk do
     setup_env
     is_tag = ENV["GITHUB_REF"].to_s.start_with?("refs/tags/")
-    # The APK is produced by :androidApp; :composeApp is a KMP library.
+    # The APK is produced by :androidApp; :shared is a KMP library.
     gradle_task = is_tag ? ":androidApp:assembleDefaultRelease" : ":androidApp:assembleDefaultDebug"
     gradlew gradle_task
 
@@ -104,28 +104,28 @@ platform :desktop do
   desc "Build Linux desktop binary"
   lane :linux do
     setup_env
-    gradlew ":composeApp:packageReleaseDeb"
+    gradlew ":desktopApp:packageReleaseDeb"
     UI.success("✅ Linux .deb built")
   end
 
   desc "Build Linux RPM package (release tags only)"
   lane :linux_rpm do
     setup_env
-    gradlew ":composeApp:packageReleaseRpm"
+    gradlew ":desktopApp:packageReleaseRpm"
     UI.success("✅ Linux .rpm built")
   end
 
   desc "Build Windows desktop binary"
   lane :windows do
     setup_env
-    gradlew ":composeApp:packageReleaseExe"
+    gradlew ":desktopApp:packageReleaseExe"
     UI.success("✅ Windows .exe built")
   end
 
   desc "Build macOS desktop binary"
   lane :macos do
     setup_env
-    gradlew ":composeApp:packageReleaseDmg"
+    gradlew ":desktopApp:packageReleaseDmg"
     UI.success("✅ macOS .dmg built")
   end
 end
@@ -135,10 +135,10 @@ platform :wasm do
   desc "Build wasm/js bundle"
   lane :build do
     setup_env
-    gradlew(":composeApp:wasmJsBrowserDistribution")
+    gradlew(":webApp:wasmJsBrowserDistribution")
 
-    wasm_dir = "../composeApp/build/dist/wasmJs/productionExecutable"
-    zip_file = "../composeApp/build/wasm-dist.zip"
+    wasm_dir = "../webApp/build/dist/wasmJs/productionExecutable"
+    zip_file = "../webApp/build/wasm-dist.zip"
     FileUtils.rm_f(zip_file)
     zip_directory(wasm_dir, zip_file)
 
