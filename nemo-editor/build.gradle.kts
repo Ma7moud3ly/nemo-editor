@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
+description = "A powerful, cross-platform code editor component built with Compose Multiplatform, featuring syntax highlighting, code formatting, and advanced editing capabilities"
 val javaVersion = libs.versions.java.version.get()
 val projectPackageName = libs.versions.project.packageName.get()
 
@@ -71,41 +72,8 @@ dependencies {
     "androidRuntimeClasspath"(libs.ui.tooling)
 }
 
-// Maven Publishing Configuration
 mavenPublishing {
-    val versionName = libs.versions.project.versionName.get()
-    coordinates("io.github.ma7moud3ly", "nemo-editor", versionName)
-
     pom {
         name.set("Nemo Code Editor")
-        description.set("A powerful, cross-platform code editor component built with Compose Multiplatform, featuring syntax highlighting, code formatting, and advanced editing capabilities")
-        url.set("https://github.com/Ma7moud3ly/nemo-editor")
-        inceptionYear.set("2025")
-
-        licenses {
-            license {
-                name.set("MIT License")
-                url.set("https://opensource.org/licenses/MIT")
-                distribution.set("repo")
-            }
-        }
-
-        developers {
-            developer {
-                id.set("ma7moud3ly")
-                name.set("Mahmoud Aly")
-                email.set("engma7moud3ly@gmail.com")
-                url.set("https://github.com/Ma7moud3ly")
-            }
-        }
-
-        scm {
-            url.set("https://github.com/Ma7moud3ly/nemo-editor")
-            connection.set("scm:git:git://github.com/Ma7moud3ly/nemo-editor.git")
-            developerConnection.set("scm:git:ssh://git@github.com/Ma7moud3ly/nemo-editor.git")
-        }
     }
-
-    publishToMavenCentral(automaticRelease = false)
-    signAllPublications()
 }
