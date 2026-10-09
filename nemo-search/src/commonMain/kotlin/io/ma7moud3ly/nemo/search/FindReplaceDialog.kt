@@ -47,8 +47,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import io.ma7moud3ly.nemo.managers.FindAndReplaceManager
-import io.ma7moud3ly.nemo.managers.rememberFindAndReplaceManager
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.Language

@@ -1,4 +1,4 @@
-package io.ma7moud3ly.nemo.managers
+package io.ma7moud3ly.nemo.search
 
 import androidx.compose.runtime.*
 import io.ma7moud3ly.nemo.model.CodeState

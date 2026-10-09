@@ -49,8 +49,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.ma7moud3ly.nemo.managers.FindAndReplaceManager
-import io.ma7moud3ly.nemo.managers.rememberFindAndReplaceManager
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.Language
 import io.ma7moud3ly.nemo.model.EditorThemes

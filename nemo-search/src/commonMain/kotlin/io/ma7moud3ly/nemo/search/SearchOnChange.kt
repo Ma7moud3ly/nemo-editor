@@ -2,7 +2,6 @@ package io.ma7moud3ly.nemo.search
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import io.ma7moud3ly.nemo.managers.FindAndReplaceManager
 import io.ma7moud3ly.nemo.model.CodeState
 
 /**
