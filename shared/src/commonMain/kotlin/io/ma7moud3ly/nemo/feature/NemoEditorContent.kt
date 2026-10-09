@@ -28,23 +28,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.ma7moud3ly.nemo.NemoCodeEditor
 import io.ma7moud3ly.nemo.feature.bottomBar.EditorBottomBar
 import io.ma7moud3ly.nemo.feature.sideBar.EditorSidebar
-import io.ma7moud3ly.nemo.feature.tabs.EditorTabs
 import io.ma7moud3ly.nemo.feature.topBar.EditorTopBar
 import io.ma7moud3ly.nemo.feature.welcome.WelcomeScreen
 import io.ma7moud3ly.nemo.managers.FilesManager
 import io.ma7moud3ly.nemo.managers.LanguagesManager
 import io.ma7moud3ly.nemo.managers.ShortcutsManager
-import io.ma7moud3ly.nemo.managers.TabsManager
+import io.ma7moud3ly.nemo.managers.file
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.EditorAction
 import io.ma7moud3ly.nemo.model.EditorSettings
-import io.ma7moud3ly.nemo.model.EditorTab
 import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.Language
 import io.ma7moud3ly.nemo.model.NemoFile
 import io.ma7moud3ly.nemo.model.UiState
 import io.ma7moud3ly.nemo.search.FindReplaceBar
+import io.ma7moud3ly.nemo.shared.resources.Res
+import io.ma7moud3ly.nemo.shared.resources.editor_tabs_close
+import io.ma7moud3ly.nemo.tabs.NemoTab
+import io.ma7moud3ly.nemo.tabs.EditorTabIcon
+import io.ma7moud3ly.nemo.tabs.NemoTabs
+import io.ma7moud3ly.nemo.tabs.TabsManager
 import io.ma7moud3ly.nemo.ui.AppTheme
+import org.jetbrains.compose.resources.stringResource
 
 @Preview
 @Composable
@@ -53,13 +58,13 @@ private fun NemoEditorScreenContentPreview() {
     val editorSettings = EditorSettings(theme = theme)
     val tabsManager = TabsManager(
         initialTabs = listOf(
-            EditorTab(
+            NemoTab(
                 id = "1",
                 codeState = CodeState(
                     initialCode = "fun main() {\n    println(\"Hello, Nemo!\")\n}",
                     language = Language.KOTLIN
                 ),
-                file = NemoFile("main.py", "")
+                tabFile = NemoFile("main.py", "")
             )
         )
     )
@@ -143,10 +148,13 @@ internal fun NemoEditorScreenContent(
                     .fillMaxHeight()
             ) {
                 // Tab Bar
-                EditorTabs(
-                    activeTab = { activeTab },
-                    tabs = { tabsManager.tabs },
-                    onAction = onAction
+                NemoTabs(
+                    tabs = tabsManager.tabs,
+                    activeTabId = activeTab?.id,
+                    onSelect = { onAction(EditorAction.SwitchTab(it.id)) },
+                    onClose = { onAction(EditorAction.CloseTab(it.id)) },
+                    closeLabel = stringResource(Res.string.editor_tabs_close),
+                    icon = { EditorTabIcon(tint = it.file.iconColor()) }
                 )
                 if (showCodeEditor) {
                     Column(modifier = Modifier.fillMaxSize()) {

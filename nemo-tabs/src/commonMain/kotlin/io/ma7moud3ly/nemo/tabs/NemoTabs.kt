@@ -1,4 +1,4 @@
-package io.ma7moud3ly.nemo.feature.tabs
+package io.ma7moud3ly.nemo.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -23,65 +23,68 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import io.ma7moud3ly.nemo.managers.TabsManager
-import io.ma7moud3ly.nemo.model.EditorAction
-import io.ma7moud3ly.nemo.model.EditorTab
-import io.ma7moud3ly.nemo.model.NemoFile
-import io.ma7moud3ly.nemo.ui.AppTheme
-import io.ma7moud3ly.nemo.model.EditorThemes
-import io.ma7moud3ly.nemo.feature.iconColor
-import io.ma7moud3ly.nemo.shared.resources.Res
-import io.ma7moud3ly.nemo.shared.resources.editor_tabs_close
-import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import io.ma7moud3ly.nemo.model.CodeState
+import io.ma7moud3ly.nemo.model.EditorThemes
+import io.ma7moud3ly.nemo.model.Language
+import io.ma7moud3ly.nemo.model.toColorScheme
+
+private data class PreviewFile(
+    override val name: String,
+    override val path: String = name
+) : TabFile
 
 @Preview
 @Composable
-private fun EditorTabsPreview() {
-    val tabsManager = TabsManager(
-        activeTabId = "1",
-        initialTabs = listOf(
-            EditorTab(
-                id = "1",
-                file = NemoFile(name = "main.kt"),
-                isDirty = true
-            ),
-            EditorTab(
-                id = "2",
-                file = NemoFile(name = "main.kt"),
-                isDirty = false
-            ), EditorTab(
-                id = "3",
-                file = NemoFile(name = "main.kt"),
-                isDirty = false
-            )
+private fun NemoTabsPreview() {
+    val tabs = listOf("main.kt", "App.kt", "notes.md").mapIndexed { index, name ->
+        NemoTab(
+            id = index.toString(),
+            tabFile = PreviewFile(name),
+            codeState = CodeState(language = Language.KOTLIN, isDirty = index == 0)
         )
-    )
-    AppTheme(theme = EditorThemes.NEMO_LIGHT) {
+    }
+    MaterialTheme(colorScheme = EditorThemes.NEMO_LIGHT.toColorScheme()) {
         Surface {
-            EditorTabs(
-                activeTab = { tabsManager.activeTab },
-                tabs = { tabsManager.tabs },
-                onAction = {}
+            NemoTabs(
+                tabs = tabs,
+                activeTabId = "0",
+                onSelect = {},
+                onClose = {}
             )
         }
     }
 }
 
+/**
+ * A scrolling row of tabs. Each tab shows an icon, a title, a dot when it has
+ * unsaved changes, and a close button. Nothing is drawn when [tabs] is empty.
+ *
+ * @param tabs the open tabs, in order
+ * @param activeTabId id of the tab drawn as active
+ * @param onSelect called when a tab is clicked
+ * @param onClose called when a tab's close button is clicked
+ * @param modifier applied to the row's surface
+ * @param closeLabel accessibility label of the close button
+ * @param icon the icon shown before the title
+ */
 @Composable
-internal fun EditorTabs(
-    activeTab: () -> EditorTab?,
-    tabs: () -> List<EditorTab>,
-    onAction: (EditorAction) -> Unit
+fun NemoTabs(
+    tabs: List<NemoTab>,
+    activeTabId: String?,
+    onSelect: (NemoTab) -> Unit,
+    onClose: (NemoTab) -> Unit,
+    modifier: Modifier = Modifier,
+    closeLabel: String = "Close",
+    icon: @Composable (NemoTab) -> Unit = { EditorTabIcon() }
 ) {
-    val tabs = tabs()
-    val activeTab = activeTab()
     if (tabs.isEmpty()) return
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -94,20 +97,41 @@ internal fun EditorTabs(
         ) {
             tabs.forEach { tab ->
                 TabItem(
-                    tab = tab,
-                    isActive = tab.id == activeTab?.id,
-                    onClick = { onAction(EditorAction.SwitchTab(tab.id)) },
-                    onClose = { onAction(EditorAction.CloseTab(tab.id)) }
+                    title = tab.title,
+                    isActive = tab.id == activeTabId,
+                    isDirty = tab.isDirty,
+                    closeLabel = closeLabel,
+                    icon = { icon(tab) },
+                    onClick = { onSelect(tab) },
+                    onClose = { onClose(tab) }
                 )
             }
         }
     }
 }
 
+/**
+ * The default tab icon, a file glyph.
+ *
+ * @param tint color of the icon
+ */
+@Composable
+fun EditorTabIcon(tint: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Icon(
+        imageVector = Icons.AutoMirrored.Default.InsertDriveFile,
+        contentDescription = null,
+        modifier = Modifier.size(16.dp),
+        tint = tint
+    )
+}
+
 @Composable
 private fun TabItem(
-    tab: EditorTab,
+    title: String,
     isActive: Boolean,
+    isDirty: Boolean,
+    closeLabel: String,
+    icon: @Composable () -> Unit,
     onClick: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -128,20 +152,15 @@ private fun TabItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Default.InsertDriveFile,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = tab.file.iconColor()
-            )
+            icon()
 
             Text(
-                text = tab.file.name,
+                text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
-            if (tab.codeState.contentChanged) {
+            if (isDirty) {
                 Box(
                     modifier = Modifier
                         .size(8.dp)
@@ -158,7 +177,7 @@ private fun TabItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(Res.string.editor_tabs_close),
+                    contentDescription = closeLabel,
                     modifier = Modifier.size(12.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )

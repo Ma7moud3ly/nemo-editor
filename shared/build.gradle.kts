@@ -39,6 +39,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.nemoEditor)
             implementation(projects.nemoSearch)
+            implementation(projects.nemoTabs)
             implementation(libs.runtime)
             implementation(libs.foundation)
             implementation(libs.material3)
