@@ -10,8 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.EditorSettings
@@ -28,9 +28,9 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-private fun EditorBottomBarPreview() {
+private fun NemoBottomBarPreview() {
     AppTheme(theme = EditorThemes.NEMO_LIGHT) {
-        EditorBottomBar(
+        NemoBottomBar(
             modifier = Modifier.fillMaxWidth(),
             state = CodeState(language = Language.KOTLIN),
             settings = EditorSettings(readOnly = true)
@@ -39,33 +39,14 @@ private fun EditorBottomBarPreview() {
 }
 
 @Composable
-internal fun EditorBottomBar(
+internal fun NemoBottomBar(
     modifier: Modifier,
     state: CodeState,
-    settings: EditorSettings
+    settings: EditorSettings,
+    background: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
 ) {
-
-    // Metadata
-    val totalLines = remember(state.code) {
-        state.code.split('\n').size
-    }
-
-    val currentLineIndex = remember(state.cursorPosition, state.code) {
-        state.code.substring(
-            0,
-            state.cursorPosition.coerceAtMost(state.code.length)
-        ).count { it == '\n' }
-    }
-    val cursorLine = remember(currentLineIndex) {
-        currentLineIndex + 1
-    }
-
-    val cursorColumn = remember(state.cursorPosition, state.code) {
-        getCursorColumn(state.code, state.cursorPosition)
-    }
-
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        color = background,
         modifier = modifier
     ) {
         Row(
@@ -73,7 +54,12 @@ internal fun EditorBottomBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                stringResource(Res.string.bottom_bar_cursor_position, cursorLine, totalLines, cursorColumn),
+                stringResource(
+                    Res.string.bottom_bar_cursor_position,
+                    state.currentLine,
+                    state.totalLines,
+                    state.currentColumn
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimary
             )
@@ -87,7 +73,10 @@ internal fun EditorBottomBar(
                     )
                 }
                 Text(
-                    stringResource(Res.string.bottom_bar_font_size, settings.fontSizeState.value),
+                    stringResource(
+                        Res.string.bottom_bar_font_size,
+                        settings.fontSizeState.value
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
@@ -104,12 +93,4 @@ internal fun EditorBottomBar(
             }
         }
     }
-}
-
-
-// Helper functions
-private fun getCursorColumn(text: String, cursorPosition: Int): Int {
-    val textBeforeCursor = text.take(cursorPosition.coerceAtMost(text.length))
-    val lastNewline = textBeforeCursor.lastIndexOf('\n')
-    return if (lastNewline == -1) cursorPosition + 1 else cursorPosition - lastNewline
 }

@@ -26,7 +26,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.tooling.preview.Preview
 import io.ma7moud3ly.nemo.NemoCodeEditor
-import io.ma7moud3ly.nemo.feature.bottomBar.EditorBottomBar
+import io.ma7moud3ly.nemo.feature.bottomBar.NemoBottomBar
 import io.ma7moud3ly.nemo.feature.sideBar.EditorSidebar
 import io.ma7moud3ly.nemo.feature.topBar.EditorTopBar
 import io.ma7moud3ly.nemo.feature.welcome.WelcomeScreen
@@ -120,7 +120,7 @@ internal fun NemoEditorScreenContent(
         },
         bottomBar = {
             codeState?.let {
-                EditorBottomBar(
+                NemoBottomBar(
                     state = it,
                     settings = editorSettings,
                     modifier = Modifier.fillMaxWidth()

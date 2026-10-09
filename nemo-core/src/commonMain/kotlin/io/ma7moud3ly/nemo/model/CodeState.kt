@@ -103,6 +103,14 @@ class CodeState(
     }
 
     /**
+     * Current column number (1-based), counted from the start of the line
+     */
+    val currentColumn: Int by derivedStateOf {
+        val position = cursorPosition.coerceAtMost(code.length)
+        position - code.lastIndexOf('\n', position - 1)
+    }
+
+    /**
      * Update the text content with a new cursor position
      *
      * @param newText The new text content
