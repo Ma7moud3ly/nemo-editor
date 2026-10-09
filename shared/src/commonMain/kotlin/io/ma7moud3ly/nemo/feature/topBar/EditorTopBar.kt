@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,7 +56,8 @@ import io.ma7moud3ly.nemo.platform.LocalPlatform
 import io.ma7moud3ly.nemo.platform.isWasmJs
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.EditorAction
-import io.ma7moud3ly.nemo.model.EditorTab
+import io.ma7moud3ly.nemo.managers.file
+import io.ma7moud3ly.nemo.tabs.NemoTab
 import io.ma7moud3ly.nemo.model.NemoFile
 import io.ma7moud3ly.nemo.platform.exists
 import io.ma7moud3ly.nemo.platform.isJvm
@@ -103,7 +103,7 @@ private fun EditorTopBarPreview() {
 
 @Composable
 internal fun EditorTopBar(
-    tab: EditorTab? = null,
+    tab: NemoTab? = null,
     modifier: Modifier = Modifier,
     animatedLogo: Boolean,
     onAction: (EditorAction) -> Unit
@@ -198,7 +198,7 @@ private fun TopBarMenuButton(
 
 @Composable
 private fun MenuFile(
-    tab: EditorTab?,
+    tab: NemoTab?,
     onAction: (EditorAction) -> Unit
 ) {
     val platform = LocalPlatform.current

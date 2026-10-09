@@ -9,14 +9,20 @@ import io.ma7moud3ly.nemo.managers.FormatManager
 import io.ma7moud3ly.nemo.managers.LanguagesManager
 import io.ma7moud3ly.nemo.managers.PersistenceManager
 import io.ma7moud3ly.nemo.managers.ShortcutsManager
-import io.ma7moud3ly.nemo.managers.TabsManager
+import io.ma7moud3ly.nemo.managers.file
+import io.ma7moud3ly.nemo.managers.newUntitledTab
+import io.ma7moud3ly.nemo.managers.openFile
 import io.ma7moud3ly.nemo.model.AppRoutes
 import io.ma7moud3ly.nemo.model.EditorAction
 import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.NemoFile
 import io.ma7moud3ly.nemo.model.UiState
+import io.ma7moud3ly.nemo.model.asLanguage
+import io.github.vinceglb.filekit.FileKit
 import io.ma7moud3ly.nemo.platform.exists
+import io.ma7moud3ly.nemo.platform.platformSaveFile
+import io.ma7moud3ly.nemo.tabs.TabsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -85,8 +91,8 @@ class NemoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             when (action) {
                 // ===== FILE OPERATIONS =====
-                EditorAction.NewUntitledFile -> tabsManager.createEmptyTab()
-                is EditorAction.NewFile -> tabsManager.createNewTab(action.file, "")
+                EditorAction.NewUntitledFile -> tabsManager.newUntitledTab()
+                is EditorAction.NewFile -> tabsManager.openFile(action.file, "")
                 EditorAction.PickFile -> handlePickFile()
                 EditorAction.PickFolder -> handlePickFolder()
                 is EditorAction.OpenFile -> handleOpenFile(action.file)
@@ -175,7 +181,7 @@ class NemoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             val (file, content) = filesManager.pickFile()
             if (content != null && file != null) {
-                tabsManager.createNewTab(file, content)
+                tabsManager.openFile(file, content)
                 persistenceManager.addRecentFile(file)
             }
         }
@@ -195,7 +201,7 @@ class NemoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val content = filesManager.readFile(file).orEmpty()
-                tabsManager.createNewTab(file, content)
+                tabsManager.openFile(file, content)
                 persistenceManager.addRecentFile(file)
             } catch (e: Exception) {
                 filesManager.errorMessage = "Failed to open file: ${e.message}"
@@ -208,7 +214,7 @@ class NemoEditorViewModel : ViewModel() {
         println("Saving file: ${tab.file.path}")
         viewModelScope.launch {
             if (tab.file.exists()) {
-                val success = filesManager.saveFile(tab.file, tab.fileContent)
+                val success = filesManager.saveFile(tab.file, tab.content)
                 if (success) {
                     tabsManager.commitChanges(tab.id)
                     persistenceManager.addRecentFile(tab.file)
@@ -223,10 +229,10 @@ class NemoEditorViewModel : ViewModel() {
     private fun handleSaveAs() {
         val tab = tabsManager.activeTab ?: return
         viewModelScope.launch {
-            val newFile = filesManager.saveFileAs(tab.file, tab.fileContent)
+            val newFile = filesManager.saveFileAs(tab.file, tab.content)
             if (newFile != null) {
                 tabsManager.commitChanges(tab.id)
-                tabsManager.updateActiveTab(newFile)
+                tabsManager.updateTab(tab.id, newFile, newFile.extension.asLanguage())
             }
         }
     }
@@ -236,7 +242,7 @@ class NemoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             filesManager.exportFile(
                 file = tab.file,
-                content = tab.fileContent
+                content = tab.content
             )
         }
     }
@@ -248,7 +254,7 @@ class NemoEditorViewModel : ViewModel() {
                 if (codeState != null && tab.file.exists()) {
                     val success = filesManager.saveFile(
                         file = tab.file,
-                        content = tab.fileContent
+                        content = tab.content
                     )
                     if (success) {
                         tabsManager.commitChanges(tab.id)
@@ -274,7 +280,7 @@ class NemoEditorViewModel : ViewModel() {
     fun deleteFile(file: NemoFile) {
         viewModelScope.launch {
             filesManager.deleteFile(file)
-            tabsManager.forceCloseTab(file)
+            tabsManager.findTab(file.path)?.let { tabsManager.forceCloseTab(it.id) }
         }
     }
 
@@ -294,12 +300,24 @@ class NemoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             val newFile = filesManager.renameFile(file, newName) ?: return@launch
             if (newFile.exists()) {
-                tabsManager.updateTab(file, newFile)
+                tabsManager.findTab(file.path)?.let { tabsManager.updateTab(it.id, newFile) }
             }
         }
     }
 
     // ==================== TAB OPERATIONS ====================
+
+    /**
+     * Writes every tab with unsaved changes to its file. Tabs without a file
+     * on disk are skipped.
+     */
+    private suspend fun saveAllTabs() {
+        tabsManager.tabs.forEach { tab ->
+            if (tab.file.exists() && tab.isDirty) {
+                FileKit.platformSaveFile(tab.file, tab.content)
+            }
+        }
+    }
 
     private suspend fun handleCloseActiveTab() {
         val tab = tabsManager.activeTab ?: return
@@ -346,7 +364,7 @@ class NemoEditorViewModel : ViewModel() {
     }
 
     private fun handleCloseSavedTabs() {
-        tabsManager.tabs.filter { !it.contentChanged() }.forEach { tab ->
+        tabsManager.tabs.filter { !it.isDirty }.forEach { tab ->
             tabsManager.forceCloseTab(tab.id)
         }
     }
@@ -407,7 +425,7 @@ class NemoEditorViewModel : ViewModel() {
                     animatedLogo = uiState.showAnimatedLogo.value
                 )
                 // Save all tabs
-                tabsManager.saveAllTabs()
+                saveAllTabs()
                 // Save all state
                 persistenceManager.saveAll()
 

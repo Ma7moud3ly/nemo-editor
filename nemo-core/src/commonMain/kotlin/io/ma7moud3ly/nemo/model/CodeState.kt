@@ -22,7 +22,8 @@ import io.ma7moud3ly.nemo.managers.diffText
  *
  * @param initialCode Initial text content
  * @param language Language of the code
- * @param isDirty Whether the code has unsaved changes
+ * @param isDirty Whether the code starts with unsaved changes. When true,
+ *   [contentChanged] stays true until the first [commitChanges].
  * @param initialCursorPosition Initial cursor position (default: end of text)
  */
 @Stable
@@ -32,9 +33,6 @@ class CodeState(
     isDirty: Boolean = false,
     initialCursorPosition: Int = initialCode.length
 ) {
-    var contentChanged by mutableStateOf(isDirty)
-        internal set
-
     /**
      * Code editor text field value
      */
@@ -53,13 +51,22 @@ class CodeState(
     val code: String get() = value.text
 
     /**
+     * The text as of the last [commitChanges]. It is null while the code has
+     * never been saved.
+     */
+    private var savedCode: String? by mutableStateOf(if (isDirty) null else initialCode)
+
+    /**
+     * True when the code differs from the text of the last [commitChanges].
+     * Undoing or typing back to the saved text makes it false again.
+     */
+    val contentChanged: Boolean by derivedStateOf { code != savedCode }
+
+    /**
      * Integrated undo/redo manager
      * Automatically manages action history for this editor state
      */
-    private val undoRedoManager: UndoRedoManager = UndoRedoManager(
-        state = this,
-        onContentChanges = { contentChanged = it }
-    )
+    private val undoRedoManager: UndoRedoManager = UndoRedoManager(state = this)
 
     /**
      * Set by [insertLineBreak] and cleared by the very next text change. If the
@@ -169,8 +176,11 @@ class CodeState(
         undoRedoManager.clear()
     }
 
+    /**
+     * Marks the current text as saved, which makes [contentChanged] false.
+     */
     fun commitChanges() {
-        contentChanged = false
+        savedCode = code
     }
 
     /**

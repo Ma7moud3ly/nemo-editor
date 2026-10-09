@@ -10,6 +10,7 @@ import io.ma7moud3ly.nemo.platform.exists
 import io.ma7moud3ly.nemo.platform.getPlatform
 import io.ma7moud3ly.nemo.platform.ioDispatcher
 import io.ma7moud3ly.nemo.platform.isWasmJs
+import io.ma7moud3ly.nemo.tabs.TabsManager
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.set
 import io.ma7moud3ly.nemo.model.EditorThemes
@@ -105,7 +106,7 @@ class PersistenceManager(
                     filePath = file.path,
                     fileName = file.name,
                     tempContent = if (file.exists() && platform.isWasmJs.not()) ""
-                    else tab.fileContent,
+                    else tab.content,
                     fileExtension = file.extension,
                     cursorPosition = tab.codeState.cursorPosition,
                     isDirty = file.exists().not() || platform.isWasmJs
@@ -258,7 +259,7 @@ class PersistenceManager(
             if (savedTabDataList.isEmpty()) return false
 
             // Recreate tabs
-            savedTabDataList.reversed().forEach { tabData ->
+            savedTabDataList.forEach { tabData ->
                 val platformFile = tabData.filePath.asPlatformFile()
                 val file = NemoFile(
                     name = tabData.fileName,
@@ -268,7 +269,7 @@ class PersistenceManager(
                 )
                 val content = if (file.exists()) filesManager.readFile(file).orEmpty()
                 else tabData.tempContent
-                tabsManager.createNewTab(file, content)
+                tabsManager.openFile(file, content)
             }
 
             println("$TAG: Restored ${savedTabDataList.size} tabs")
