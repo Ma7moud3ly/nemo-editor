@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
@@ -19,7 +18,7 @@ kotlin {
     }
 
     android {
-        namespace = "$projectPackageName.editor"
+        namespace = "$projectPackageName.core"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -28,15 +27,8 @@ kotlin {
         }
     }
 
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "NemoEditor"
-            isStatic = true
-        }
-    }
+    iosArm64()
+    iosSimulatorArm64()
 
     jvm()
 
@@ -52,14 +44,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.nemoCore)
             implementation(libs.runtime)
-            implementation(libs.foundation)
-            implementation(libs.material3)
             implementation(libs.ui)
-            implementation(libs.material.icons.extended)
-            implementation(libs.ui.tooling.preview)
-            implementation(libs.lifecycle.runtime.compose)
+            implementation(libs.material3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -67,18 +54,14 @@ kotlin {
     }
 }
 
-dependencies {
-    "androidRuntimeClasspath"(libs.ui.tooling)
-}
-
 // Maven Publishing Configuration
 mavenPublishing {
     val versionName = libs.versions.project.versionName.get()
-    coordinates("io.github.ma7moud3ly", "nemo-editor", versionName)
+    coordinates("io.github.ma7moud3ly", "nemo-core", versionName)
 
     pom {
-        name.set("Nemo Code Editor")
-        description.set("A powerful, cross-platform code editor component built with Compose Multiplatform, featuring syntax highlighting, code formatting, and advanced editing capabilities")
+        name.set("Nemo Core")
+        description.set("State, settings and themes shared by the Nemo Code Editor libraries")
         url.set("https://github.com/Ma7moud3ly/nemo-editor")
         inceptionYear.set("2025")
 
