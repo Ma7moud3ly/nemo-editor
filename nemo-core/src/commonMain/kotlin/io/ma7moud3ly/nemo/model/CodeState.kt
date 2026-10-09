@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import io.ma7moud3ly.nemo.InternalNemoApi
 import io.ma7moud3ly.nemo.managers.UndoRedoManager
 import io.ma7moud3ly.nemo.managers.AutoIndentHandler
 import io.ma7moud3ly.nemo.managers.diffText
@@ -37,7 +38,8 @@ class CodeState(
     /**
      * Code editor text field value
      */
-    internal var value by mutableStateOf(
+    @InternalNemoApi
+    var value by mutableStateOf(
         TextFieldValue(
             text = initialCode,
             selection = TextRange(initialCursorPosition)
@@ -110,7 +112,8 @@ class CodeState(
      * Update the text field value directly
      * Internal use only - for framework integration
      */
-    internal fun updateCodeValue(newValue: TextFieldValue) {
+    @InternalNemoApi
+    fun updateCodeValue(newValue: TextFieldValue) {
         value = newValue
     }
 
@@ -176,7 +179,8 @@ class CodeState(
      *
      * @param insertText The text to insert
      */
-    internal fun insertCompletion(insertText: String) {
+    @InternalNemoApi
+    fun insertCompletion(insertText: String) {
         val cursorPos = this.cursorPosition
         val separators = " \n\t(){}[].,;:\"'<>="
 
@@ -222,7 +226,8 @@ class CodeState(
      * @param autoIndentHandler supplies the indentation; pass `null` to insert a
      *   bare line break.
      */
-    internal fun insertLineBreak(autoIndentHandler: AutoIndentHandler?) {
+    @InternalNemoApi
+    fun insertLineBreak(autoIndentHandler: AutoIndentHandler?) {
         val current = value
         val text = current.text
         val start = minOf(current.selection.start, current.selection.end)
@@ -261,7 +266,8 @@ class CodeState(
      * @param autoIndentHandler Optional auto-indent handler for Enter key processing
      * @return true if the change was handled successfully
      */
-    internal fun handleTextChange(
+    @InternalNemoApi
+    fun handleTextChange(
         newValue: TextFieldValue,
         autoIndentHandler: AutoIndentHandler? = null
     ): Boolean {
