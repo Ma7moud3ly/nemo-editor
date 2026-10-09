@@ -27,7 +27,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.tooling.preview.Preview
 import io.ma7moud3ly.nemo.NemoCodeEditor
 import io.ma7moud3ly.nemo.feature.bottomBar.EditorBottomBar
-import io.ma7moud3ly.nemo.feature.dialogs.FindReplaceBar
 import io.ma7moud3ly.nemo.feature.sideBar.EditorSidebar
 import io.ma7moud3ly.nemo.feature.tabs.EditorTabs
 import io.ma7moud3ly.nemo.feature.topBar.EditorTopBar
@@ -44,6 +43,7 @@ import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.Language
 import io.ma7moud3ly.nemo.model.NemoFile
 import io.ma7moud3ly.nemo.model.UiState
+import io.ma7moud3ly.nemo.search.FindReplaceBar
 import io.ma7moud3ly.nemo.ui.AppTheme
 
 @Preview
@@ -156,7 +156,7 @@ internal fun NemoEditorScreenContent(
                             exit = shrinkVertically() + fadeOut()
                         ) {
                             FindReplaceBar(
-                                codeState = codeState!!,
+                                state = codeState!!,
                                 showReplace = true,
                                 onDismiss = { onAction(EditorAction.ToggleFind) },
                             )

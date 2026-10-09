@@ -1,0 +1,19 @@
+<resources>
+    <string name="find_replace_title">Find and replace</string>
+    <string name="find_replace_find">Find</string>
+    <string name="find_replace_find_compact">Find...</string>
+    <string name="find_replace_replace">Replace</string>
+    <string name="find_replace_replace_compact">Replace...</string>
+    <string name="find_replace_replace_current">Replace current</string>
+    <string name="find_replace_replace_all">Replace all</string>
+    <string name="find_replace_replace_all_compact">All</string>
+    <string name="find_replace_no_results">No results</string>
+    <string name="find_replace_matches">%1$d of %2$d</string>
+    <string name="find_replace_previous_match">Previous match</string>
+    <string name="find_replace_next_match">Next match</string>
+    <string name="find_replace_match_case">Match case</string>
+    <string name="find_replace_whole_word">Whole word</string>
+    <string name="find_replace_regex">Regex</string>
+    <string name="find_replace_toggle_replace">Toggle replace</string>
+    <string name="find_replace_close">Close</string>
+</resources>

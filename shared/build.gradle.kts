@@ -38,6 +38,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.nemoEditor)
+            implementation(projects.nemoSearch)
             implementation(libs.runtime)
             implementation(libs.foundation)
             implementation(libs.material3)
