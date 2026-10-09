@@ -1,4 +1,4 @@
-package io.ma7moud3ly.nemo.feature.dialogs
+package io.ma7moud3ly.nemo.search
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,7 +38,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,29 +53,30 @@ import io.ma7moud3ly.nemo.managers.FindAndReplaceManager
 import io.ma7moud3ly.nemo.managers.rememberFindAndReplaceManager
 import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.Language
-import io.ma7moud3ly.nemo.ui.AppTheme
 import io.ma7moud3ly.nemo.model.EditorThemes
-import io.ma7moud3ly.nemo.feature.isCompactDevice
-import io.ma7moud3ly.nemo.shared.resources.Res
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_case_sensitive
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_close
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_find
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_find_compact
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_matches
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_next
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_next_match
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_no_results
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_previous
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_previous_match
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_regex
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_replace
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_replace_all
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_replace_all_compact
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_replace_compact
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_replace_current
-import io.ma7moud3ly.nemo.shared.resources.find_replace_bar_toggle_replace
+import io.ma7moud3ly.nemo.model.toColorScheme
+import io.ma7moud3ly.nemo.search.resources.Res
+import io.ma7moud3ly.nemo.search.resources.find_replace_close
+import io.ma7moud3ly.nemo.search.resources.find_replace_find
+import io.ma7moud3ly.nemo.search.resources.find_replace_find_compact
+import io.ma7moud3ly.nemo.search.resources.find_replace_matches
+import io.ma7moud3ly.nemo.search.resources.find_replace_next_match
+import io.ma7moud3ly.nemo.search.resources.find_replace_no_results
+import io.ma7moud3ly.nemo.search.resources.find_replace_previous_match
+import io.ma7moud3ly.nemo.search.resources.find_replace_replace
+import io.ma7moud3ly.nemo.search.resources.find_replace_replace_all
+import io.ma7moud3ly.nemo.search.resources.find_replace_replace_all_compact
+import io.ma7moud3ly.nemo.search.resources.find_replace_replace_compact
+import io.ma7moud3ly.nemo.search.resources.find_replace_replace_current
+import io.ma7moud3ly.nemo.search.resources.find_replace_toggle_replace
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+
+private const val CASE_GLYPH = "Aa"
+private const val REGEX_GLYPH = ".*"
+
+/** Below this width the bar switches to its stacked, compact layout. */
+private val CompactWidth = 600.dp
 
 @Preview
 @Preview(widthDp = 800)
@@ -89,13 +90,13 @@ private fun FindReplaceBarPreview() {
         }
         """".trimIndent()
     )
-    AppTheme(theme = EditorThemes.NEMO_DARK) {
+    MaterialTheme(colorScheme = EditorThemes.NEMO_DARK.toColorScheme()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.background
         ) {
             FindReplaceBar(
-                codeState = state,
+                state = state,
                 showReplace = true,
                 onDismiss = {}
             )
@@ -104,67 +105,73 @@ private fun FindReplaceBarPreview() {
 }
 
 /**
- *  Find and Replace Bar
+ * Find and replace bar, meant to sit above or below the editor.
+ *
+ * It searches [state] as the user types, selects the current match in the
+ * editor, and replaces one match or all of them. The layout is a single row
+ * on wide screens and a stacked one when the bar is narrower than 600dp.
+ *
+ * @param state the editor state to search in
+ * @param onDismiss called when the user closes the bar
+ * @param modifier applied to the bar's surface
+ * @param showReplace whether the replace row is open at first
+ * @param manager holds the search text, options and matches
  */
 @Composable
 fun FindReplaceBar(
-    codeState: CodeState,
+    state: CodeState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
     showReplace: Boolean = false,
-    onDismiss: () -> Unit
+    manager: FindAndReplaceManager = rememberFindAndReplaceManager(state)
 ) {
-    val manager = rememberFindAndReplaceManager(codeState)
     var isReplaceVisible by remember { mutableStateOf(showReplace) }
 
-    LaunchedEffect(
-        manager.findText,
-        manager.caseSensitive,
-        manager.wholeWord,
-        manager.useRegex,
-        codeState.code
-    ) {
-        manager.updateSearch()
-    }
+    SearchOnChange(state, manager)
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .shadow(8.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
     ) {
-        Column(
-            modifier = Modifier.padding(if (isCompactDevice()) 8.dp else 16.dp),
-            verticalArrangement = Arrangement.spacedBy(if (isCompactDevice()) 8.dp else 12.dp)
-        ) {
-            if (isCompactDevice()) {
-                CompactSearchRow(
-                    manager = manager,
-                    onDismiss = onDismiss,
-                    isReplaceVisible = isReplaceVisible,
-                    onToggleReplace = { isReplaceVisible = !isReplaceVisible }
-                )
+        BoxWithConstraints {
+            val compact = maxWidth < CompactWidth
+            Column(
+                modifier = Modifier.padding(if (compact) 8.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)
+            ) {
+                if (compact) {
+                    CompactSearchRow(
+                        manager = manager,
+                        onDismiss = onDismiss,
+                        isReplaceVisible = isReplaceVisible,
+                        onToggleReplace = { isReplaceVisible = !isReplaceVisible }
+                    )
 
-                AnimatedVisibility(
-                    visible = isReplaceVisible,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    CompactReplaceRow(manager = manager)
-                }
-            } else {
-                SearchRow(
-                    manager = manager,
-                    onDismiss = onDismiss,
-                    isReplaceVisible = isReplaceVisible,
-                    onToggleReplace = { isReplaceVisible = !isReplaceVisible }
-                )
+                    AnimatedVisibility(
+                        visible = isReplaceVisible,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        CompactReplaceRow(manager = manager)
+                    }
+                } else {
+                    SearchRow(
+                        manager = manager,
+                        onDismiss = onDismiss,
+                        isReplaceVisible = isReplaceVisible,
+                        onToggleReplace = { isReplaceVisible = !isReplaceVisible }
+                    )
 
-                AnimatedVisibility(
-                    visible = isReplaceVisible,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    ReplaceRow(manager = manager)
+                    AnimatedVisibility(
+                        visible = isReplaceVisible,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        ReplaceRow(manager = manager)
+                    }
                 }
             }
         }
@@ -192,7 +199,7 @@ private fun SearchRow(
                 .height(48.dp),
             placeholder = {
                 Text(
-                    stringResource(Res.string.find_replace_bar_find),
+                    stringResource(Res.string.find_replace_find),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -215,11 +222,11 @@ private fun SearchRow(
                         Text(
                             if (manager.hasMatches())
                                 stringResource(
-                                    Res.string.find_replace_bar_matches,
+                                    Res.string.find_replace_matches,
                                     manager.currentMatchIndex + 1,
                                     manager.matches.size
                                 )
-                            else stringResource(Res.string.find_replace_bar_no_results),
+                            else stringResource(Res.string.find_replace_no_results),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             color = if (manager.hasMatches())
@@ -250,7 +257,7 @@ private fun SearchRow(
         ) {
             Icon(
                 Icons.Default.KeyboardArrowUp,
-                stringResource(Res.string.find_replace_bar_previous_match),
+                stringResource(Res.string.find_replace_previous_match),
                 tint = if (manager.hasMatches())
                     MaterialTheme.colorScheme.onSurface
                 else
@@ -266,7 +273,7 @@ private fun SearchRow(
         ) {
             Icon(
                 Icons.Default.KeyboardArrowDown,
-                stringResource(Res.string.find_replace_bar_next_match),
+                stringResource(Res.string.find_replace_next_match),
                 tint = if (manager.hasMatches())
                     MaterialTheme.colorScheme.onSurface
                 else
@@ -290,7 +297,7 @@ private fun SearchRow(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        stringResource(Res.string.find_replace_bar_case_sensitive),
+                        CASE_GLYPH,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = if (manager.caseSensitive)
@@ -318,7 +325,7 @@ private fun SearchRow(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        stringResource(Res.string.find_replace_bar_regex),
+                        REGEX_GLYPH,
                         style = MaterialTheme.typography.labelLarge,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -338,7 +345,7 @@ private fun SearchRow(
         ) {
             Icon(
                 if (isReplaceVisible) Icons.Default.FindReplace else Icons.Default.Search,
-                contentDescription = stringResource(Res.string.find_replace_bar_toggle_replace),
+                contentDescription = stringResource(Res.string.find_replace_toggle_replace),
                 tint = if (isReplaceVisible)
                     MaterialTheme.colorScheme.secondary
                 else
@@ -356,7 +363,7 @@ private fun SearchRow(
         ) {
             Icon(
                 Icons.Default.Close,
-                stringResource(Res.string.find_replace_bar_close),
+                stringResource(Res.string.find_replace_close),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -379,7 +386,7 @@ private fun ReplaceRow(manager: FindAndReplaceManager) {
                 .height(48.dp),
             placeholder = {
                 Text(
-                    stringResource(Res.string.find_replace_bar_replace),
+                    stringResource(Res.string.find_replace_replace),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -411,7 +418,7 @@ private fun ReplaceRow(manager: FindAndReplaceManager) {
         ) {
             Icon(
                 Icons.Default.FindReplace,
-                stringResource(Res.string.find_replace_bar_replace_current),
+                stringResource(Res.string.find_replace_replace_current),
                 tint = if (manager.hasMatches())
                     MaterialTheme.colorScheme.secondary
                 else
@@ -427,7 +434,7 @@ private fun ReplaceRow(manager: FindAndReplaceManager) {
         ) {
             Icon(
                 Icons.Default.DoneAll,
-                stringResource(Res.string.find_replace_bar_replace_all),
+                stringResource(Res.string.find_replace_replace_all),
                 tint = if (manager.hasMatches())
                     MaterialTheme.colorScheme.secondary
                 else
@@ -465,7 +472,7 @@ private fun CompactSearchRow(
                     .height(50.dp),
                 placeholder = {
                     Text(
-                        stringResource(Res.string.find_replace_bar_find_compact),
+                        stringResource(Res.string.find_replace_find_compact),
                         style = MaterialTheme.typography.bodySmall
                     )
                 },
@@ -498,7 +505,7 @@ private fun CompactSearchRow(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    stringResource(Res.string.find_replace_bar_close),
+                    stringResource(Res.string.find_replace_close),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -522,7 +529,7 @@ private fun CompactSearchRow(
                     Text(
                         if (manager.hasMatches())
                             stringResource(
-                                Res.string.find_replace_bar_matches,
+                                Res.string.find_replace_matches,
                                 manager.currentMatchIndex + 1,
                                 manager.matches.size
                             )
@@ -554,7 +561,7 @@ private fun CompactSearchRow(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        stringResource(Res.string.find_replace_bar_previous),
+                        stringResource(Res.string.find_replace_previous_match),
                         modifier = Modifier.size(18.dp),
                         tint = if (manager.hasMatches())
                             MaterialTheme.colorScheme.onSurface
@@ -570,7 +577,7 @@ private fun CompactSearchRow(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,
-                        stringResource(Res.string.find_replace_bar_next),
+                        stringResource(Res.string.find_replace_next_match),
                         modifier = Modifier.size(18.dp),
                         tint = if (manager.hasMatches())
                             MaterialTheme.colorScheme.onSurface
@@ -594,7 +601,7 @@ private fun CompactSearchRow(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Text(
-                        stringResource(Res.string.find_replace_bar_case_sensitive),
+                        CASE_GLYPH,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (manager.caseSensitive)
@@ -609,7 +616,7 @@ private fun CompactSearchRow(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Text(
-                        stringResource(Res.string.find_replace_bar_regex),
+                        REGEX_GLYPH,
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -640,7 +647,7 @@ private fun CompactSearchRow(
             ) {
                 Icon(
                     if (isReplaceVisible) Icons.Default.FindReplace else Icons.Default.Search,
-                    contentDescription = stringResource(Res.string.find_replace_bar_toggle_replace),
+                    contentDescription = stringResource(Res.string.find_replace_toggle_replace),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -662,7 +669,7 @@ private fun CompactReplaceRow(manager: FindAndReplaceManager) {
                 .height(50.dp),
             placeholder = {
                 Text(
-                    stringResource(Res.string.find_replace_bar_replace_compact),
+                    stringResource(Res.string.find_replace_replace_compact),
                     style = MaterialTheme.typography.bodySmall
                 )
             },
@@ -709,7 +716,7 @@ private fun CompactReplaceRow(manager: FindAndReplaceManager) {
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    stringResource(Res.string.find_replace_bar_replace),
+                    stringResource(Res.string.find_replace_replace),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -733,7 +740,7 @@ private fun CompactReplaceRow(manager: FindAndReplaceManager) {
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    stringResource(Res.string.find_replace_bar_replace_all_compact),
+                    stringResource(Res.string.find_replace_replace_all_compact),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold
                 )
