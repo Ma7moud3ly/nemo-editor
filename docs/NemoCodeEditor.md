@@ -565,3 +565,12 @@ val myTheme = EditorTheme(
 )
 
 val settings = EditorSettings(theme = myTheme)
+```
+
+`SyntaxColors` also takes two optional colors for documentation comments such
+as KDoc:
+
+| Color | Used for | When not set |
+|-------|----------|--------------|
+| `docComment` | The text of a `/** */` comment | Same as `comment` |
+| `docTag` | Tags and links inside it, such as `@param` and `[name]` | Same as `keyword` |

@@ -26,7 +26,7 @@ class KotlinErrorDetector : ErrorDetector() {
         while (i < tokens.size) {
             val token = tokens[i]
 
-            if (token.type == TokenType.WHITESPACE || token.type == TokenType.COMMENT) {
+            if (token.type == TokenType.WHITESPACE || token.type.isComment()) {
                 i++
                 continue
             }
@@ -136,7 +136,7 @@ class KotlinErrorDetector : ErrorDetector() {
     override fun getNextNonWhitespace(tokens: List<Token>, currentIndex: Int): Token? {
         var i = currentIndex + 1
         while (i < tokens.size) {
-            if (tokens[i].type != TokenType.WHITESPACE && tokens[i].type != TokenType.COMMENT) {
+            if (tokens[i].type != TokenType.WHITESPACE && !tokens[i].type.isComment()) {
                 return tokens[i]
             }
             i++
@@ -153,3 +153,7 @@ class KotlinErrorDetector : ErrorDetector() {
         }
     }
 }
+
+/** True for a comment, a documentation comment, or a tag inside one. */
+private fun TokenType.isComment(): Boolean =
+    this == TokenType.COMMENT || this == TokenType.DOC_COMMENT || this == TokenType.DOC_TAG
