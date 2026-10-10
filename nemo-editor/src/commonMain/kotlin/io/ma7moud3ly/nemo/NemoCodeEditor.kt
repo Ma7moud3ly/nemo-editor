@@ -2,6 +2,7 @@ package io.ma7moud3ly.nemo
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -66,6 +67,16 @@ import io.ma7moud3ly.nemo.syntax.indent.indentGuides
 import io.ma7moud3ly.nemo.syntax.tokenizer.TokenizerFactory
 import kotlinx.coroutines.launch
 
+/**
+ * The code editor.
+ *
+ * Clicking a line number toggles a highlight on that line, kept in
+ * [CodeState.highlights].
+ *
+ * @param state the code, the caret, the undo history and the highlighted lines
+ * @param modifier applied to the editor
+ * @param settings theme, font, indentation and the other options
+ */
 @Composable
 fun NemoCodeEditor(
     state: CodeState,
@@ -225,6 +236,13 @@ private fun EditorContent(
     // it, and the autocomplete popup reads the caret rectangle.
     var codeTextLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
 
+    // Layout of the line numbers, used to tell which one was clicked and to
+    // draw the highlights behind them.
+    var lineNumbersLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    // Color of a highlighted line that has no color of its own.
+    val highlightColor = Color(theme.syntax.keyword).copy(alpha = 0.2f)
+
     // Bounds of the visible code area, the viewport the popup is placed within.
     var codeAreaSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -294,9 +312,23 @@ private fun EditorContent(
                             color = Color(theme.lineNumber),
                             textAlign = TextAlign.End
                         ),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .lineHighlights(
+                                highlights = { state.highlights },
+                                textLayout = { lineNumbersLayout },
+                                defaultColor = highlightColor
+                            )
+                            // A click on a line number toggles that line's highlight
+                            .pointerInput(state) {
+                                detectTapGestures { offset ->
+                                    val layout = lineNumbersLayout ?: return@detectTapGestures
+                                    state.toggleHighlight(layout.getLineForVerticalPosition(offset.y) + 1)
+                                }
+                            },
                         softWrap = false,
-                        maxLines = Int.MAX_VALUE
+                        maxLines = Int.MAX_VALUE,
+                        onTextLayout = { lineNumbersLayout = it }
                     )
                 }
             }
@@ -333,20 +365,27 @@ private fun EditorContent(
                         .focusRequester(focusRequester),
                     decorationBox = { innerTextField ->
                         Box(
-                            modifier = Modifier.indentGuides(
-                                guides = guides,
-                                activeLine = activeLine,
-                                textLayout = { codeTextLayout },
-                                color = Color(theme.lineNumber).copy(alpha = 0.30f),
-                                activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
-                            )
+                            modifier = Modifier
+                                .lineHighlights(
+                                    highlights = { state.highlights },
+                                    textLayout = { codeTextLayout },
+                                    defaultColor = highlightColor
+                                )
+                                .indentGuides(
+                                    guides = guides,
+                                    activeLine = activeLine,
+                                    textLayout = { codeTextLayout },
+                                    color = Color(theme.lineNumber).copy(alpha = 0.30f),
+                                    activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
+                                )
                         ) {
                             if (code.text.isEmpty()) {
                                 Text(
                                     if (readOnly) "" else "Start typing...",
                                     style = codeTextStyle.copy(
                                         color = Color(theme.lineNumber)
-                                    )
+                                    ),
+                                    onTextLayout = { codeTextLayout = it }
                                 )
                             } else {
                                 Text(

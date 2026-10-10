@@ -81,6 +81,7 @@ CodeState(
 | `totalLines` | `Int` | Number of lines |
 | `currentLine` | `Int` | Line the caret is on, one-based |
 | `currentColumn` | `Int` | Column the caret is on, one-based |
+| `highlights` | `List<LineHighlight>` | Lines drawn with a colored background |
 | `contentChanged` | `Boolean` | Whether the code differs from the last `commitChanges()` |
 
 ### Methods
@@ -94,7 +95,30 @@ fun updateText(newText: String, newCursorPosition: Int = newText.length)
 fun setSelection(start: Int, end: Int)
 // Change tracking
 fun commitChanges()  // Mark as saved
+// Line highlights
+fun toggleHighlight(line: Int, color: Long? = null)  // Add, or remove when already highlighted
+fun isHighlighted(line: Int): Boolean
+fun clearHighlights()
 ```
+
+### Line Highlights
+
+A highlight is a colored band behind one line, drawn across the code and the
+line numbers. Clicking a line number toggles a highlight on that line, and
+`highlights` is observable state, so your UI can react to it.
+```kotlin
+// Highlight line 3 with the theme's default color
+codeState.toggleHighlight(line = 3)
+
+// Highlight line 7 in translucent red (ARGB)
+codeState.toggleHighlight(line = 7, color = 0x40FF0000)
+
+// Remove them all
+codeState.clearHighlights()
+```
+
+Lines are one-based. A highlight stays on its line number when lines are added
+or removed above it.
 
 ### Example: Basic Editor
 ```kotlin
