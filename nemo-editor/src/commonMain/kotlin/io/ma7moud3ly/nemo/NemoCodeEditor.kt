@@ -313,7 +313,7 @@ private fun EditorContent(
         ) {
             val customTextSelectionColors = TextSelectionColors(
                 handleColor = Color(theme.syntax.keyword),
-                backgroundColor = Color(0xFF3D5A80).copy(alpha = 0.4f)
+                backgroundColor = Color(theme.selection).copy(alpha = 0.6f)
             )
 
             CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
