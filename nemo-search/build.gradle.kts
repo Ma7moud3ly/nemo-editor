@@ -6,38 +6,30 @@ plugins {
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
-description = "A powerful, cross-platform code editor component built with Compose Multiplatform, featuring syntax highlighting, code formatting, and advanced editing capabilities"
+description = "Find and replace bar and dialog for the Nemo Code Editor"
 val javaVersion = libs.versions.java.version.get()
 val projectPackageName = libs.versions.project.packageName.get()
 
 kotlin {
-    compilerOptions {
-        optIn.add("io.ma7moud3ly.nemo.InternalNemoApi")
-    }
-
     android {
-        namespace = "$projectPackageName.editor"
+        namespace = "$projectPackageName.search"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
             jvmTarget.set(JvmTarget.fromTarget(javaVersion))
         }
+
+        // Workaround for CMP-9547: compose resources aren't packaged into the
+        // consuming APK unless android resources are enabled for this KMP library.
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
     }
 
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "NemoEditor"
-            isStatic = true
-        }
-    }
+    iosArm64()
+    iosSimulatorArm64()
 
     jvm()
 
@@ -59,8 +51,8 @@ kotlin {
             implementation(libs.material3)
             implementation(libs.ui)
             implementation(libs.material.icons.extended)
+            implementation(libs.components.resources)
             implementation(libs.ui.tooling.preview)
-            implementation(libs.lifecycle.runtime.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -68,12 +60,10 @@ kotlin {
     }
 }
 
-dependencies {
-    "androidRuntimeClasspath"(libs.ui.tooling)
+compose.resources {
+    packageOfResClass = "$projectPackageName.search.resources"
 }
 
-mavenPublishing {
-    pom {
-        name.set("Nemo Code Editor")
-    }
+dependencies {
+    "androidRuntimeClasspath"(libs.ui.tooling)
 }

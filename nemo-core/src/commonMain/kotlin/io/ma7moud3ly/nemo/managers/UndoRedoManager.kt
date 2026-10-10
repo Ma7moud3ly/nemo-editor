@@ -18,11 +18,9 @@ import io.ma7moud3ly.nemo.model.CodeState
  * When redo is called, the action is moved from redo stack to undo stack.
  *
  * @param state The editor state that this manager will modify
- * @param onContentChanges Optional callback to trigger UI updates when content changes
  */
 internal class UndoRedoManager(
-    private val state: CodeState,
-    private val onContentChanges: (Boolean) -> Unit = {}
+    private val state: CodeState
 ) {
     private val undoStack = mutableListOf<FindReplaceAction>()
     private val redoStack = mutableListOf<FindReplaceAction>()
@@ -178,7 +176,6 @@ internal class UndoRedoManager(
     private fun updateCounts() {
         undoCountState = undoStack.size
         redoCountState = redoStack.size
-        onContentChanges(undoStack.isNotEmpty())
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.ma7moud3ly.nemo.model
 
 import io.github.vinceglb.filekit.PlatformFile
+import io.ma7moud3ly.nemo.tabs.TabFile
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.log10
@@ -11,8 +12,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 data class NemoFile(
-    val name: String,
-    val path: String = "",
+    override val name: String,
+    override val path: String = "",
     val isDirectory: Boolean = false,
     val extension: String = "",
     val size: Long = 0L,
@@ -20,7 +21,7 @@ data class NemoFile(
     val isHidden: Boolean = false,
     val isReadOnly: Boolean = false,
     val platformFile: PlatformFile? = null
-) {
+) : TabFile {
     val nameWithoutExt: String get() = name.substringBeforeLast(".")
 }
 

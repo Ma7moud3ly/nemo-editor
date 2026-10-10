@@ -12,13 +12,30 @@ Complete reference for integrating NemoCodeEditor into your Kotlin Multiplatform
 ## 📦 Installation
 ```kotlin
 commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:1.0.4")
+    implementation("io.github.ma7moud3ly:nemo-editor:x.x.x")
+
+    // Optional modules
+    implementation("io.github.ma7moud3ly:nemo-search:x.x.x")
+    implementation("io.github.ma7moud3ly:nemo-tabs:x.x.x")
 }
 ```
+
+Replace `x.x.x` with the latest version on [Maven Central](https://central.sonatype.com/artifact/io.github.ma7moud3ly/nemo-editor). All modules share the same version.
+
+| Module | Contents |
+|--------|----------|
+| `nemo-editor` | `NemoCodeEditor`, with `CodeState`, `EditorSettings` and the themes |
+| `nemo-search` | `FindReplaceBar`, `FindReplaceDialog` and `FindAndReplaceManager` |
+| `nemo-tabs` | `TabsManager`, `NemoTab`, `TabFile` and `NemoTabs` |
 
 ---
 
 ## 🎯 Core API
+
+Module: `nemo-editor`. It includes `CodeState`, `EditorSettings` and the themes.
+```kotlin
+implementation("io.github.ma7moud3ly:nemo-editor:x.x.x")
+```
 
 ### NemoCodeEditor
 
@@ -63,7 +80,8 @@ CodeState(
 | `selection` | `TextRange` | Current selection |
 | `totalLines` | `Int` | Number of lines |
 | `currentLine` | `Int` | Line the caret is on, one-based |
-| `contentChanged` | `Boolean` | Whether there are unsaved changes |
+| `currentColumn` | `Int` | Column the caret is on, one-based |
+| `contentChanged` | `Boolean` | Whether the code differs from the last `commitChanges()` |
 
 ### Methods
 ```kotlin
@@ -183,6 +201,239 @@ fun toggleIndentGuides()
 fun toggleReadOnly()
 fun getIndentString(): String
 ```
+
+---
+
+## 🔍 Find and Replace
+
+Module: `nemo-search`. Both components search a `CodeState`, select the current
+match in the editor, and replace one match or all of them.
+```kotlin
+implementation("io.github.ma7moud3ly:nemo-search:x.x.x")
+```
+
+### FindReplaceBar
+
+A bar meant to sit above or below the editor. It uses a single row on wide
+screens and a stacked layout when it is narrower than 600dp.
+```kotlin
+@Composable
+fun FindReplaceBar(
+    state: CodeState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    showReplace: Boolean = false,
+    manager: FindAndReplaceManager = rememberFindAndReplaceManager(state)
+)
+```
+
+### FindReplaceDialog
+
+The same search in a floating dialog, with match case, whole word and regex as
+chips. Enter in the find field moves to the next match, and Enter in the
+replace field replaces the current one.
+```kotlin
+@Composable
+fun FindReplaceDialog(
+    state: CodeState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    showReplace: Boolean = true,
+    manager: FindAndReplaceManager = rememberFindAndReplaceManager(state)
+)
+```
+
+**Parameters:**
+- `state` - The editor state to search in
+- `onDismiss` - Called when the user closes the bar or dialog
+- `showReplace` - Whether the replace controls are shown
+- `manager` - Holds the search text, options and matches
+
+### Example: Editor with a Search Bar
+```kotlin
+@Composable
+fun SearchableEditor() {
+    val codeState = rememberCodeState(code = "", language = Language.KOTLIN)
+    var showSearch by remember { mutableStateOf(false) }
+
+    Column {
+        if (showSearch) {
+            FindReplaceBar(
+                state = codeState,
+                showReplace = true,
+                onDismiss = { showSearch = false }
+            )
+        }
+        NemoCodeEditor(
+            state = codeState,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+```
+
+### FindAndReplaceManager
+
+The search logic behind both components. Use it directly to drive a search
+from your own UI or from keyboard shortcuts.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `findText` | `String` | Text to search for |
+| `replaceText` | `String` | Text that replaces a match |
+| `caseSensitive` | `Boolean` | Match upper and lower case exactly |
+| `wholeWord` | `Boolean` | Match whole words only |
+| `useRegex` | `Boolean` | Treat `findText` as a regular expression |
+| `matches` | `List<IntRange>` | Ranges of the matches in the code |
+| `currentMatchIndex` | `Int` | Index of the selected match, or -1 |
+
+```kotlin
+fun updateSearch()
+fun goToNext()
+fun goToPrevious()
+fun replaceCurrent()
+fun replaceAll()
+fun hasMatches(): Boolean
+fun clear()
+```
+
+---
+
+## 🗂️ Tabs
+
+Module: `nemo-tabs`. A `TabsManager` holds the open tabs in the order they were
+opened. Each tab has its own `CodeState`. The manager does no file reading or
+writing; that stays in your app.
+```kotlin
+implementation("io.github.ma7moud3ly:nemo-tabs:x.x.x")
+```
+
+### TabFile
+
+Implement it on your own file class so it can be opened in a tab.
+```kotlin
+interface TabFile {
+    val name: String   // text shown on the tab
+    val path: String   // identifies the document; empty when not saved yet
+}
+```
+
+### NemoTab
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `String` | Unique id of the tab |
+| `tabFile` | `TabFile` | What the tab edits |
+| `codeState` | `CodeState` | Editor state holding the tab's text |
+| `title` | `String` | Name of the tab's file |
+| `path` | `String` | Path of the tab's file |
+| `content` | `String` | Text currently in the tab |
+| `isDirty` | `Boolean` | Whether the tab has unsaved changes |
+| `isNew` | `Boolean` | Whether the tab has text but no path yet |
+
+### TabsManager
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tabs` | `List<NemoTab>` | Open tabs, in order |
+| `activeTab` | `NemoTab?` | The active tab |
+| `activeTabFlow` | `Flow<NemoTab?>` | The active tab as a flow |
+| `activeCodeState` | `CodeState?` | Code state of the active tab |
+
+```kotlin
+// Open and update
+fun openTab(document: TabFile, content: String, language: Language, isDirty: Boolean = false): NemoTab
+fun addTab(document: TabFile, content: String = "", language: Language = Language.BLANK, isDirty: Boolean = false): NemoTab
+fun updateTab(tabId: String, document: TabFile, language: Language? = null)
+
+// Find
+fun getTab(tabId: String): NemoTab?
+fun findTab(path: String): NemoTab?
+fun getCodeState(tabId: String): CodeState?
+fun getDirtyTabs(): List<NemoTab>
+
+// Switch
+fun switchTab(tabId: String)
+fun switchToNextTab()
+fun switchToPreviousTab()
+
+// Close
+fun closeTab(tabId: String): Boolean          // false when the tab is dirty
+fun closeAllTabs(): List<NemoTab>             // returns the dirty tabs
+fun closeOtherTabs(tabId: String): List<NemoTab>
+fun closeTabsToRight(tabId: String): List<NemoTab>
+fun forceCloseTab(tabId: String): Boolean
+fun forceCloseAllTabs()
+
+// Change tracking
+fun commitChanges(tabId: String)              // Mark as saved
+```
+
+`openTab` switches to the open tab when a document with the same `path` is
+already open; `addTab` always adds one. The close functions leave dirty tabs
+open and report them, so the app can ask before calling a `forceClose` one.
+
+### NemoTabs
+
+The tab strip. Each tab shows an icon, its title, a dot when it has unsaved
+changes, and a close button.
+```kotlin
+@Composable
+fun NemoTabs(
+    tabs: List<NemoTab>,
+    activeTabId: String?,
+    onSelect: (NemoTab) -> Unit,
+    onClose: (NemoTab) -> Unit,
+    modifier: Modifier = Modifier,
+    closeLabel: String = "Close",
+    icon: @Composable (NemoTab) -> Unit = { EditorTabIcon() }
+)
+```
+
+### Example: Editor with Tabs
+```kotlin
+data class MyFile(
+    override val name: String,
+    override val path: String
+) : TabFile
+
+@Composable
+fun TabbedEditor() {
+    val tabsManager = remember { TabsManager() }
+    val activeTab by tabsManager.activeTabFlow.collectAsState(null)
+
+    LaunchedEffect(Unit) {
+        tabsManager.openTab(
+            document = MyFile(name = "Main.kt", path = "/project/Main.kt"),
+            content = "fun main() {}",
+            language = Language.KOTLIN
+        )
+    }
+
+    Column {
+        NemoTabs(
+            tabs = tabsManager.tabs,
+            activeTabId = activeTab?.id,
+            onSelect = { tabsManager.switchTab(it.id) },
+            onClose = { tab ->
+                if (!tabsManager.closeTab(tab.id)) {
+                    // The tab has unsaved changes: ask the user, then
+                    // tabsManager.forceCloseTab(tab.id)
+                }
+            }
+        )
+        activeTab?.let { tab ->
+            NemoCodeEditor(
+                state = tab.codeState,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+```
+
+After saving a tab's text, call `tabsManager.commitChanges(tab.id)` to clear its
+unsaved-changes dot.
 
 ---
 

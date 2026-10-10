@@ -2,13 +2,15 @@ package io.ma7moud3ly.nemo.managers
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import io.ma7moud3ly.nemo.InternalNemoApi
 import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.Language
 
 /**
  * Handles automatic indentation when user presses Enter
  */
-internal class AutoIndentHandler(
+@InternalNemoApi
+class AutoIndentHandler(
     private val language: Language,
     private val settings: EditorSettings
 ) {
@@ -126,7 +128,8 @@ internal class AutoIndentHandler(
 /**
  * Factory to create language-specific auto-indent handlers
  */
-internal object AutoIndentHandlerFactory {
+@InternalNemoApi
+object AutoIndentHandlerFactory {
     fun create(language: Language, settings: EditorSettings): AutoIndentHandler {
         return AutoIndentHandler(language, settings)
     }

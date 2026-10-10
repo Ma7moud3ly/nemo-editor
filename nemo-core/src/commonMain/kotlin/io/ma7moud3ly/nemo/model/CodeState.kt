@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import io.ma7moud3ly.nemo.InternalNemoApi
 import io.ma7moud3ly.nemo.managers.UndoRedoManager
 import io.ma7moud3ly.nemo.managers.AutoIndentHandler
 import io.ma7moud3ly.nemo.managers.diffText
@@ -21,7 +22,8 @@ import io.ma7moud3ly.nemo.managers.diffText
  *
  * @param initialCode Initial text content
  * @param language Language of the code
- * @param isDirty Whether the code has unsaved changes
+ * @param isDirty Whether the code starts with unsaved changes. When true,
+ *   [contentChanged] stays true until the first [commitChanges].
  * @param initialCursorPosition Initial cursor position (default: end of text)
  */
 @Stable
@@ -31,13 +33,11 @@ class CodeState(
     isDirty: Boolean = false,
     initialCursorPosition: Int = initialCode.length
 ) {
-    var contentChanged by mutableStateOf(isDirty)
-        internal set
-
     /**
      * Code editor text field value
      */
-    internal var value by mutableStateOf(
+    @InternalNemoApi
+    var value by mutableStateOf(
         TextFieldValue(
             text = initialCode,
             selection = TextRange(initialCursorPosition)
@@ -51,13 +51,22 @@ class CodeState(
     val code: String get() = value.text
 
     /**
+     * The text as of the last [commitChanges]. It is null while the code has
+     * never been saved.
+     */
+    private var savedCode: String? by mutableStateOf(if (isDirty) null else initialCode)
+
+    /**
+     * True when the code differs from the text of the last [commitChanges].
+     * Undoing or typing back to the saved text makes it false again.
+     */
+    val contentChanged: Boolean by derivedStateOf { code != savedCode }
+
+    /**
      * Integrated undo/redo manager
      * Automatically manages action history for this editor state
      */
-    private val undoRedoManager: UndoRedoManager = UndoRedoManager(
-        state = this,
-        onContentChanges = { contentChanged = it }
-    )
+    private val undoRedoManager: UndoRedoManager = UndoRedoManager(state = this)
 
     /**
      * Set by [insertLineBreak] and cleared by the very next text change. If the
@@ -94,6 +103,14 @@ class CodeState(
     }
 
     /**
+     * Current column number (1-based), counted from the start of the line
+     */
+    val currentColumn: Int by derivedStateOf {
+        val position = cursorPosition.coerceAtMost(code.length)
+        position - code.lastIndexOf('\n', position - 1)
+    }
+
+    /**
      * Update the text content with a new cursor position
      *
      * @param newText The new text content
@@ -110,7 +127,8 @@ class CodeState(
      * Update the text field value directly
      * Internal use only - for framework integration
      */
-    internal fun updateCodeValue(newValue: TextFieldValue) {
+    @InternalNemoApi
+    fun updateCodeValue(newValue: TextFieldValue) {
         value = newValue
     }
 
@@ -166,8 +184,11 @@ class CodeState(
         undoRedoManager.clear()
     }
 
+    /**
+     * Marks the current text as saved, which makes [contentChanged] false.
+     */
     fun commitChanges() {
-        contentChanged = false
+        savedCode = code
     }
 
     /**
@@ -176,7 +197,8 @@ class CodeState(
      *
      * @param insertText The text to insert
      */
-    internal fun insertCompletion(insertText: String) {
+    @InternalNemoApi
+    fun insertCompletion(insertText: String) {
         val cursorPos = this.cursorPosition
         val separators = " \n\t(){}[].,;:\"'<>="
 
@@ -222,7 +244,8 @@ class CodeState(
      * @param autoIndentHandler supplies the indentation; pass `null` to insert a
      *   bare line break.
      */
-    internal fun insertLineBreak(autoIndentHandler: AutoIndentHandler?) {
+    @InternalNemoApi
+    fun insertLineBreak(autoIndentHandler: AutoIndentHandler?) {
         val current = value
         val text = current.text
         val start = minOf(current.selection.start, current.selection.end)
@@ -261,7 +284,8 @@ class CodeState(
      * @param autoIndentHandler Optional auto-indent handler for Enter key processing
      * @return true if the change was handled successfully
      */
-    internal fun handleTextChange(
+    @InternalNemoApi
+    fun handleTextChange(
         newValue: TextFieldValue,
         autoIndentHandler: AutoIndentHandler? = null
     ): Boolean {
