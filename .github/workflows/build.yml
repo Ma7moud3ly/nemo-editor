@@ -72,16 +72,19 @@ jobs:
         with:
           name: android-apk
           path: nemo-editor-*.apk
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: wasm-dist
           path: nemo-editor-*.zip
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
           path: |
             desktopApp/build/compose/binaries/main-release/deb/*.deb
             desktopApp/build/compose/binaries/main-release/rpm/*.rpm
+          if-no-files-found: error
 
   # ---- Build Windows desktop ----
   build-windows:
@@ -117,6 +120,7 @@ jobs:
         with:
           name: desktop-windows
           path: desktopApp/build/compose/binaries/main-release/exe/*.exe
+          if-no-files-found: error
 
   # ---- Build macOS desktop ----
   build-macos:
@@ -150,6 +154,7 @@ jobs:
         with:
           name: desktop-macos
           path: desktopApp/build/compose/binaries/main-release/dmg/*.dmg
+          if-no-files-found: error
 
   # ---- Release ----
   release:
@@ -171,6 +176,9 @@ jobs:
           name: "Release ${{ github.ref_name }}"
           draft: false
           prerelease: false
+          # Stop when an expected file is missing, so nothing is published to
+          # Maven Central after an incomplete release.
+          fail_on_unmatched_files: true
           files: |
             release/**/*.apk
             release/**/*.zip
