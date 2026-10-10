@@ -43,15 +43,14 @@ The editor is the only required module. Two more are optional, and all modules s
 | `nemo-search` | A find and replace bar and dialog |
 | `nemo-tabs` | A tabs manager and a tab strip |
 
+
+### Render an editor
+
 ```kotlin
 commonMain.dependencies {
     implementation("io.github.ma7moud3ly:nemo-editor:x.x.x")
-    implementation("io.github.ma7moud3ly:nemo-search:x.x.x")
-    implementation("io.github.ma7moud3ly:nemo-tabs:x.x.x")
 }
 ```
-
-### Render an editor
 
 ```kotlin
 import androidx.compose.foundation.layout.fillMaxSize
