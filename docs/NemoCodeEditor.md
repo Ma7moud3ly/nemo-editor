@@ -75,7 +75,7 @@ fun NemoCodeField(
 
 **Parameters:**
 - `state` - Field content state; read the text from `state.code`
-- `settings` - Theme, font size, indentation and read-only mode
+- `settings` - Theme, font, indentation and read-only mode
 - `singleLine` - Keeps the text on one line; Enter then runs the keyboard action
 - `keyboardOptions` - Keyboard type and the action shown on the keyboard
 - `keyboardActions` - What runs when the keyboard action is pressed

@@ -24,7 +24,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import io.ma7moud3ly.nemo.managers.AutoIndentHandlerFactory
 import io.ma7moud3ly.nemo.model.CodeState
@@ -45,7 +44,7 @@ import io.ma7moud3ly.nemo.syntax.tokenizer.TokenizerFactory
  *
  * @param state the code, the caret and the undo history
  * @param modifier applied to the field
- * @param settings theme, font size, indentation and read-only mode
+ * @param settings theme, font, indentation and read-only mode
  * @param singleLine keeps the text on one line. Enter then runs the keyboard
  *   action from [keyboardActions] and inserts no line break.
  * @param keyboardOptions keyboard type and the action shown on the keyboard,
@@ -67,6 +66,7 @@ fun NemoCodeField(
     val theme by remember { settings.themeState }
     val readOnly = settings.readOnlyState.value
     val fontSize = settings.fontSizeState.value
+    val fontFamily = settings.fontFamilyState.value
 
     val tokenizer = remember(language) { TokenizerFactory.getTokenizer(language) }
     val highlighter = remember(theme, tokenizer) {
@@ -82,9 +82,9 @@ fun NemoCodeField(
     }
     val autoIndent = settings.enableAutoIndentState.value
 
-    val codeTextStyle = remember(fontSize) {
+    val codeTextStyle = remember(fontSize, fontFamily) {
         TextStyle(
-            fontFamily = FontFamily.Monospace,
+            fontFamily = fontFamily,
             fontSize = fontSize.sp,
             lineHeight = (fontSize * 1.5f).sp
         )
