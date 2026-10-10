@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -45,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -188,6 +190,7 @@ fun NemoCodeEditor(
             fontFamily = settings.fontFamilyState.value,
             showLineNumbers = settings.showLineNumbersState.value,
             readOnly = settings.readOnlyState.value,
+            contentPadding = settings.contentPaddingState.value,
             scrollState = scrollState,
             guides = { indentGuides },
             activeLine = { state.currentLine - 1 },
@@ -210,6 +213,7 @@ private fun EditorContent(
     fontFamily: FontFamily,
     showLineNumbers: Boolean,
     readOnly: Boolean,
+    contentPadding: PaddingValues,
     scrollState: ScrollState,
     guides: () -> IndentGuides?,
     activeLine: () -> Int,
@@ -246,7 +250,12 @@ private fun EditorContent(
     // Bounds of the visible code area, the viewport the popup is placed within.
     var codeAreaSize by remember { mutableStateOf(IntSize.Zero) }
 
-    val textPadding = with(LocalDensity.current) { 4.dp.toPx() }
+    // Where the text starts inside the scrolling content, in pixels.
+    val layoutDirection = LocalLayoutDirection.current
+    val textLeft = with(LocalDensity.current) {
+        contentPadding.calculateLeftPadding(layoutDirection).toPx()
+    }
+    val textTop = with(LocalDensity.current) { contentPadding.calculateTopPadding().toPx() }
 
     // Caret bounds in code-area coordinates: read off the real text layout, then
     // shifted by the scroll offsets and the padding the text sits behind. Taking
@@ -259,8 +268,8 @@ private fun EditorContent(
         } else {
             val offset = code.selection.start.coerceIn(0, layout.layoutInput.text.length)
             layout.getCursorRect(offset).translate(
-                translateX = textPadding - horizontalScrollState.value,
-                translateY = -scrollState.value.toFloat()
+                translateX = textLeft - horizontalScrollState.value,
+                translateY = textTop - scrollState.value
             )
         }
     }
@@ -295,12 +304,15 @@ private fun EditorContent(
                     .width(IntrinsicSize.Min)
                     .fillMaxHeight()
                     .background(Color(theme.gutter))
-                    .padding(top = 4.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .verticalScroll(scrollState, enabled = false)
                         .horizontalScroll(horizontalScrollState, enabled = false)
+                        .padding(
+                            top = contentPadding.calculateTopPadding(),
+                            bottom = contentPadding.calculateBottomPadding()
+                        )
                         .padding(horizontal = 4.dp)
                 ) {
                     Text(
@@ -342,7 +354,6 @@ private fun EditorContent(
                 .weight(1f)
                 .fillMaxHeight()
                 .background(Color(theme.background))
-                .padding(top = 4.dp)
                 .onSizeChanged { codeAreaSize = it }
         ) {
             val customTextSelectionColors = TextSelectionColors(
@@ -361,7 +372,7 @@ private fun EditorContent(
                         .fillMaxSize()
                         .verticalScroll(scrollState)
                         .horizontalScroll(horizontalScrollState)
-                        .padding(horizontal = 4.dp)
+                        .padding(contentPadding)
                         .focusRequester(focusRequester),
                     decorationBox = { innerTextField ->
                         Box(

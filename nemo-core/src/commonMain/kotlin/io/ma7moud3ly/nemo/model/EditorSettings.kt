@@ -1,7 +1,9 @@
 package io.ma7moud3ly.nemo.model
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.min
 
@@ -18,6 +20,9 @@ import kotlin.math.min
  * @param enableAutoIndent Automatically indent new lines
  * @param enableAutocomplete Show autocomplete suggestions
  * @param readOnly Make the editor non-editable
+ * @param contentPadding Space between the code and the edges of the editor.
+ *   The line numbers use its top and bottom values, so they stay aligned
+ *   with their lines.
  */
 data class EditorSettings(
     // Theme
@@ -37,6 +42,9 @@ data class EditorSettings(
     private val enableAutoIndent: Boolean = true,
     private val enableAutocomplete: Boolean = true,
     private val readOnly: Boolean = false,
+
+    // Layout
+    private val contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp),
 ) {
     init {
         require(tabSize in 2..8) { "Tab size must be between 2 and 8" }
@@ -53,6 +61,7 @@ data class EditorSettings(
     val enableAutoIndentState = mutableStateOf(enableAutoIndent)
     val enableAutocompleteState = mutableStateOf(enableAutocomplete)
     val readOnlyState = mutableStateOf(readOnly)
+    val contentPaddingState = mutableStateOf(contentPadding)
 
     fun toggleReadOnly() {
         readOnlyState.value = !readOnlyState.value
@@ -107,7 +116,8 @@ data class EditorSettings(
         fontFamilyState.value,
         enableAutoIndentState.value,
         enableAutocompleteState.value,
-        readOnlyState.value
+        readOnlyState.value,
+        contentPaddingState.value
     )
 
     /**

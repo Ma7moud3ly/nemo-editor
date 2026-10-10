@@ -244,7 +244,8 @@ EditorSettings(
     fontFamily: FontFamily = FontFamily.Monospace,
     enableAutoIndent: Boolean = true,
     enableAutocomplete: Boolean = true,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp)
 )
 ```
 
@@ -264,6 +265,7 @@ All properties are exposed as `MutableState` for reactive updates:
 | `enableAutocompleteState` | `MutableState<Boolean>` | Enable autocomplete |
 | `enableAutoIndentState` | `MutableState<Boolean>` | Enable auto-indent |
 | `readOnlyState` | `MutableState<Boolean>` | Read-only mode |
+| `contentPaddingState` | `MutableState<PaddingValues>` | Space between the code and the editor's edges |
 
 ### Methods
 ```kotlin
