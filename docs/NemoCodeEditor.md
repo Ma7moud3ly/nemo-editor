@@ -245,7 +245,8 @@ EditorSettings(
     enableAutoIndent: Boolean = true,
     enableAutocomplete: Boolean = true,
     readOnly: Boolean = false,
-    contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp)
+    contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp),
+    showScrollbars: Boolean = true
 )
 ```
 
@@ -266,6 +267,7 @@ All properties are exposed as `MutableState` for reactive updates:
 | `enableAutoIndentState` | `MutableState<Boolean>` | Enable auto-indent |
 | `readOnlyState` | `MutableState<Boolean>` | Read-only mode |
 | `contentPaddingState` | `MutableState<PaddingValues>` | Space between the code and the editor's edges |
+| `showScrollbarsState` | `MutableState<Boolean>` | Show scroll bars while the code overflows |
 
 ### Methods
 ```kotlin

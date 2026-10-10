@@ -23,6 +23,7 @@ import kotlin.math.min
  * @param contentPadding Space between the code and the edges of the editor.
  *   The line numbers use its top and bottom values, so they stay aligned
  *   with their lines.
+ * @param showScrollbars Show a scroll bar while the code is larger than the editor
  */
 data class EditorSettings(
     // Theme
@@ -45,6 +46,7 @@ data class EditorSettings(
 
     // Layout
     private val contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp),
+    private val showScrollbars: Boolean = true,
 ) {
     init {
         require(tabSize in 2..8) { "Tab size must be between 2 and 8" }
@@ -62,6 +64,7 @@ data class EditorSettings(
     val enableAutocompleteState = mutableStateOf(enableAutocomplete)
     val readOnlyState = mutableStateOf(readOnly)
     val contentPaddingState = mutableStateOf(contentPadding)
+    val showScrollbarsState = mutableStateOf(showScrollbars)
 
     fun toggleReadOnly() {
         readOnlyState.value = !readOnlyState.value
@@ -117,7 +120,8 @@ data class EditorSettings(
         enableAutoIndentState.value,
         enableAutocompleteState.value,
         readOnlyState.value,
-        contentPaddingState.value
+        contentPaddingState.value,
+        showScrollbarsState.value
     )
 
     /**
