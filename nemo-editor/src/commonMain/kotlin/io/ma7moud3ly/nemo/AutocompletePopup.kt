@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -89,10 +90,21 @@ fun AutocompletePopup(
     val theme by remember { settings.themeState }
     val coroutineScope = rememberCoroutineScope()
 
-    // Trigger autocomplete when text or cursor changes (with debounce)
+    // The text the last lookup ran for. It starts as the text the editor
+    // opened with, so nothing is suggested until the user edits it.
+    var lastCode by remember(state) { mutableStateOf(state.code) }
+
+    // Trigger autocomplete when the text changes (with debounce)
     LaunchedEffect(state.code, state.cursorPosition) {
         // Small delay to debounce rapid typing
         delay(100.milliseconds)
+
+        // The caret moved without an edit, or the editor has just opened.
+        if (state.code == lastCode) {
+            autocompleteState.hide()
+            return@LaunchedEffect
+        }
+        lastCode = state.code
 
         val cursorPos = state.cursorPosition
         val textBeforeCursor = state.code.take(cursorPos)
