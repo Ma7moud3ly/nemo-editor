@@ -1,7 +1,7 @@
 package io.ma7moud3ly.nemo.model
 
 import androidx.compose.runtime.mutableStateOf
-import io.ma7moud3ly.nemo.model.EditorThemes
+import androidx.compose.ui.text.font.FontFamily
 import kotlin.math.max
 import kotlin.math.min
 
@@ -14,7 +14,7 @@ import kotlin.math.min
  * @param showLineNumbers Display line numbers in the gutter
  * @param showIndentGuides Draw vertical guides at each indentation level
  * @param fontSize Font size
- * @param fontFamily Font family name (default: JetBrains Mono)
+ * @param fontFamily Font of the code, the line numbers and the autocomplete popup
  * @param enableAutoIndent Automatically indent new lines
  * @param enableAutocomplete Show autocomplete suggestions
  * @param readOnly Make the editor non-editable
@@ -31,7 +31,7 @@ data class EditorSettings(
     private val showLineNumbers: Boolean = true,
     private val showIndentGuides: Boolean = true,
     private val fontSize: Int = 14,
-    val fontFamily: String = "JetBrains Mono",
+    private val fontFamily: FontFamily = FontFamily.Monospace,
 
     // Features
     private val enableAutoIndent: Boolean = true,
@@ -49,6 +49,7 @@ data class EditorSettings(
     val showLineNumbersState = mutableStateOf(showLineNumbers)
     val showIndentGuidesState = mutableStateOf(showIndentGuides)
     val fontSizeState = mutableStateOf(fontSize)
+    val fontFamilyState = mutableStateOf(fontFamily)
     val enableAutoIndentState = mutableStateOf(enableAutoIndent)
     val enableAutocompleteState = mutableStateOf(enableAutocomplete)
     val readOnlyState = mutableStateOf(readOnly)
@@ -103,7 +104,7 @@ data class EditorSettings(
         showLineNumbersState.value,
         showIndentGuidesState.value,
         fontSizeState.value,
-        fontFamily,
+        fontFamilyState.value,
         enableAutoIndentState.value,
         enableAutocompleteState.value,
         readOnlyState.value

@@ -190,6 +190,7 @@ fun AutocompletePopup(
                         item = item,
                         isSelected = index == autocompleteState.selectedIndex,
                         theme = theme,
+                        fontFamily = settings.fontFamilyState.value,
                         onClick = {
                             state.insertCompletion(item.insertText)
                             autocompleteState.markCompletionInserted()
@@ -206,6 +207,7 @@ private fun AutocompleteItem(
     item: CompletionItem,
     isSelected: Boolean,
     theme: EditorTheme,
+    fontFamily: FontFamily,
     onClick: () -> Unit
 ) {
     Row(
@@ -233,7 +235,7 @@ private fun AutocompleteItem(
             Text(
                 text = item.label,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = fontFamily,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     fontSize = 13.sp
                 ),
@@ -244,7 +246,7 @@ private fun AutocompleteItem(
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = fontFamily,
                         fontSize = 10.sp
                     ),
                     color = Color(theme.lineNumber),

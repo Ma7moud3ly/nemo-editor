@@ -174,6 +174,7 @@ fun NemoCodeEditor(
             totalLines = state.totalLines,
             currentLineIndex = state.currentLine - 1,
             fontSize = settings.fontSizeState.value,
+            fontFamily = settings.fontFamilyState.value,
             showLineNumbers = settings.showLineNumbersState.value,
             readOnly = settings.readOnlyState.value,
             scrollState = scrollState,
@@ -195,6 +196,7 @@ private fun EditorContent(
     currentLineIndex: Int,
     theme: EditorTheme,
     fontSize: Int,
+    fontFamily: FontFamily,
     showLineNumbers: Boolean,
     readOnly: Boolean,
     scrollState: ScrollState,
@@ -211,9 +213,9 @@ private fun EditorContent(
     val textSize = fontSize.sp
     val lineHeight = (fontSize * 1.5f).sp
 
-    val codeTextStyle = remember(textSize, lineHeight) {
+    val codeTextStyle = remember(textSize, lineHeight, fontFamily) {
         TextStyle(
-            fontFamily = FontFamily.Monospace,
+            fontFamily = fontFamily,
             fontSize = textSize,
             lineHeight = lineHeight
         )
@@ -286,7 +288,7 @@ private fun EditorContent(
                     Text(
                         text = (1..totalLines).joinToString("\n") { it.toString() },
                         style = TextStyle(
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = fontFamily,
                             fontSize = textSize,
                             lineHeight = lineHeight,
                             color = Color(theme.lineNumber),

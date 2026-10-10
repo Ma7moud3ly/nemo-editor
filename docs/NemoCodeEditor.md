@@ -165,7 +165,7 @@ EditorSettings(
     showLineNumbers: Boolean = true,
     showIndentGuides: Boolean = true,
     fontSize: Int = 14,
-    fontFamily: String = "JetBrains Mono",
+    fontFamily: FontFamily = FontFamily.Monospace,
     enableAutoIndent: Boolean = true,
     enableAutocomplete: Boolean = true,
     readOnly: Boolean = false
@@ -180,6 +180,7 @@ All properties are exposed as `MutableState` for reactive updates:
 |----------|------|-------------|
 | `themeState` | `MutableState<EditorTheme>` | Color theme |
 | `fontSizeState` | `MutableState<Int>` | Font size (8-32) |
+| `fontFamilyState` | `MutableState<FontFamily>` | Font of the code, line numbers and autocomplete |
 | `tabSizeState` | `MutableState<Int>` | Tab width (2-8) |
 | `useTabsState` | `MutableState<Boolean>` | Use tabs vs spaces |
 | `showLineNumbersState` | `MutableState<Boolean>` | Show line numbers |
@@ -201,6 +202,21 @@ fun toggleIndentGuides()
 fun toggleReadOnly()
 fun getIndentString(): String
 ```
+
+### Example: Custom Font
+```kotlin
+// A font from your app's Compose resources
+val jetBrainsMono = FontFamily(Font(Res.font.jetbrains_mono_regular))
+
+val settings = remember(jetBrainsMono) {
+    EditorSettings(fontFamily = jetBrainsMono)
+}
+
+// Or change it while the editor is on screen
+settings.fontFamilyState.value = FontFamily.Monospace
+```
+
+Use a monospaced font, so columns and indentation guides line up.
 
 ---
 
