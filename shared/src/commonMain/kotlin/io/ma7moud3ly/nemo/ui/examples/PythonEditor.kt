@@ -1,5 +1,6 @@
 package io.ma7moud3ly.nemo.ui.examples
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,6 +11,7 @@ import io.ma7moud3ly.nemo.model.Language
 import io.ma7moud3ly.nemo.model.EditorThemes
 import io.ma7moud3ly.nemo.model.rememberCodeState
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 
 @Preview
 @Composable
@@ -38,6 +40,7 @@ fun PythonEditor() {
             theme = EditorThemes.NEMO_DARK,
             readOnly = true,
             tabSize = 4,
+            contentPadding = PaddingValues(4.dp)
         )
     }
 

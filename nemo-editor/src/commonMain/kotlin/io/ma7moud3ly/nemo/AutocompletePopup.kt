@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -89,10 +90,21 @@ fun AutocompletePopup(
     val theme by remember { settings.themeState }
     val coroutineScope = rememberCoroutineScope()
 
-    // Trigger autocomplete when text or cursor changes (with debounce)
+    // The text the last lookup ran for. It starts as the text the editor
+    // opened with, so nothing is suggested until the user edits it.
+    var lastCode by remember(state) { mutableStateOf(state.code) }
+
+    // Trigger autocomplete when the text changes (with debounce)
     LaunchedEffect(state.code, state.cursorPosition) {
         // Small delay to debounce rapid typing
         delay(100.milliseconds)
+
+        // The caret moved without an edit, or the editor has just opened.
+        if (state.code == lastCode) {
+            autocompleteState.hide()
+            return@LaunchedEffect
+        }
+        lastCode = state.code
 
         val cursorPos = state.cursorPosition
         val textBeforeCursor = state.code.take(cursorPos)
@@ -178,6 +190,7 @@ fun AutocompletePopup(
                         item = item,
                         isSelected = index == autocompleteState.selectedIndex,
                         theme = theme,
+                        fontFamily = settings.fontFamilyState.value,
                         onClick = {
                             state.insertCompletion(item.insertText)
                             autocompleteState.markCompletionInserted()
@@ -194,6 +207,7 @@ private fun AutocompleteItem(
     item: CompletionItem,
     isSelected: Boolean,
     theme: EditorTheme,
+    fontFamily: FontFamily,
     onClick: () -> Unit
 ) {
     Row(
@@ -221,7 +235,7 @@ private fun AutocompleteItem(
             Text(
                 text = item.label,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = fontFamily,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     fontSize = 13.sp
                 ),
@@ -232,7 +246,7 @@ private fun AutocompleteItem(
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = fontFamily,
                         fontSize = 10.sp
                     ),
                     color = Color(theme.lineNumber),

@@ -27,7 +27,10 @@ class SyntaxHighlighter(
             tokens.forEach { token ->
                 val color = getColorForToken(token.type)
                 val fontWeight = if (token.type == TokenType.KEYWORD) FontWeight.Bold else null
-                val fontStyle = if (token.type == TokenType.COMMENT) FontStyle.Italic else null
+                val fontStyle = when (token.type) {
+                    TokenType.COMMENT, TokenType.DOC_COMMENT, TokenType.DOC_TAG -> FontStyle.Italic
+                    else -> null
+                }
                 addStyle(
                     style = SpanStyle(
                         color = color,
@@ -59,6 +62,8 @@ class SyntaxHighlighter(
             TokenType.KEYWORD -> Color(theme.syntax.keyword)
             TokenType.STRING -> Color(theme.syntax.string)
             TokenType.COMMENT -> Color(theme.syntax.comment)
+            TokenType.DOC_COMMENT -> Color(theme.syntax.docComment)
+            TokenType.DOC_TAG -> Color(theme.syntax.docTag)
             TokenType.NUMBER -> Color(theme.syntax.number)
             TokenType.FUNCTION -> Color(theme.syntax.function)
             TokenType.TYPE -> Color(theme.syntax.type)

@@ -46,7 +46,12 @@ class KotlinTokenizer : LanguageTokenizer() {
                 // Multi-line comments
                 text.startsWith("/*", i) -> {
                     val end = text.indexOf("*/", i + 2).takeIf { it != -1 }?.plus(2) ?: text.length
-                    tokens.add(Token(text.substring(i, end), TokenType.COMMENT, i, end))
+                    // "/**" opens a documentation comment, except the empty "/**/"
+                    if (text.startsWith("/**", i) && !text.startsWith("/**/", i)) {
+                        addDocComment(tokens, text, i, end)
+                    } else {
+                        tokens.add(Token(text.substring(i, end), TokenType.COMMENT, i, end))
+                    }
                     i = end
                 }
 
@@ -124,6 +129,39 @@ class KotlinTokenizer : LanguageTokenizer() {
         }
 
         return tokens
+    }
+
+    /**
+     * Adds the documentation comment between [start] and [end] as tokens: its
+     * text as [TokenType.DOC_COMMENT], and its tags and links as
+     * [TokenType.DOC_TAG].
+     *
+     * A tag is `@name` at the start of a word. A link is a name in square
+     * brackets, such as `[Foo]` or `[Foo.bar]`.
+     */
+    private fun addDocComment(tokens: MutableList<Token>, text: String, start: Int, end: Int) {
+        var textStart = start
+        DOC_TAG_REGEX.findAll(text.substring(start, end)).forEach { match ->
+            val tagStart = start + match.range.first
+            val tagEnd = start + match.range.last + 1
+
+            // "@" inside a word, as in an e-mail address, is not a tag
+            if (match.value.startsWith("@")) {
+                val before = text[tagStart - 1]
+                if (before.isLetterOrDigit() || before == '@') return@forEach
+            }
+
+            if (tagStart > textStart) {
+                tokens.add(
+                    Token(text.substring(textStart, tagStart), TokenType.DOC_COMMENT, textStart, tagStart)
+                )
+            }
+            tokens.add(Token(match.value, TokenType.DOC_TAG, tagStart, tagEnd))
+            textStart = tagEnd
+        }
+        if (end > textStart) {
+            tokens.add(Token(text.substring(textStart, end), TokenType.DOC_COMMENT, textStart, end))
+        }
     }
 
     override fun findStringEnd(text: String, start: Int, quote: Char): Pair<Int, Boolean> {
@@ -236,5 +274,9 @@ class KotlinTokenizer : LanguageTokenizer() {
     override fun isClassDef(text: String, position: Int): Boolean {
         TODO("Not yet implemented")
     }
-}
 
+    private companion object {
+        /** Matches a tag such as `@param`, or a link such as `[Foo.bar]`. */
+        val DOC_TAG_REGEX = Regex("""@[A-Za-z]+|\[[A-Za-z_][\w.]*\]""")
+    }
+}

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -108,6 +109,38 @@ class CodeState(
     val currentColumn: Int by derivedStateOf {
         val position = cursorPosition.coerceAtMost(code.length)
         position - code.lastIndexOf('\n', position - 1)
+    }
+
+    private val _highlights = mutableStateListOf<LineHighlight>()
+
+    /**
+     * The highlighted lines. The editor draws a colored background behind each.
+     */
+    val highlights: List<LineHighlight> get() = _highlights
+
+    /**
+     * Check if a line is highlighted
+     *
+     * @param line The line number (1-based)
+     */
+    fun isHighlighted(line: Int): Boolean = _highlights.any { it.line == line }
+
+    /**
+     * Highlight a line, or remove its highlight when it already has one
+     *
+     * @param line The line number (1-based)
+     * @param color ARGB color of the highlight, or null for the editor's default
+     */
+    fun toggleHighlight(line: Int, color: Long? = null) {
+        val removed = _highlights.removeAll { it.line == line }
+        if (!removed) _highlights.add(LineHighlight(line, color))
+    }
+
+    /**
+     * Remove every highlight
+     */
+    fun clearHighlights() {
+        _highlights.clear()
     }
 
     /**

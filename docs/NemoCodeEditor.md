@@ -54,6 +54,58 @@ fun NemoCodeEditor(
 - `settings` - Editor configuration
 - `modifier` - Compose modifier
 
+### NemoCodeField
+
+A syntax-highlighted input field for code, such as a REPL prompt. It shares
+`CodeState`, the highlighting and the undo history with the editor, but it has
+no line numbers, indent guides or autocomplete. It is as tall as its text and
+does not take focus on its own.
+```kotlin
+@Composable
+fun NemoCodeField(
+    state: CodeState,
+    modifier: Modifier = Modifier,
+    settings: EditorSettings = EditorSettings(),
+    singleLine: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    focusRequester: FocusRequester = remember { FocusRequester() }
+)
+```
+
+**Parameters:**
+- `state` - Field content state; read the text from `state.code`
+- `settings` - Theme, font, indentation and read-only mode
+- `singleLine` - Keeps the text on one line; Enter then runs the keyboard action
+- `keyboardOptions` - Keyboard type and the action shown on the keyboard
+- `keyboardActions` - What runs when the keyboard action is pressed
+- `focusRequester` - Lets the caller move focus to the field
+
+### Example: REPL Prompt
+```kotlin
+@Composable
+fun ReplPrompt(onRun: (String) -> Unit) {
+    val codeState = rememberCodeState(code = "", language = Language.PYTHON)
+    val focusManager = LocalFocusManager.current
+
+    NemoCodeField(
+        state = codeState,
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+        keyboardActions = KeyboardActions(
+            onSend = {
+                onRun(codeState.code)
+                codeState.updateText("")
+                focusManager.clearFocus()
+            }
+        )
+    )
+}
+```
+
+The field draws no background, so place it on a surface that suits the theme.
+
 ---
 
 ## 📝 CodeState
@@ -81,6 +133,7 @@ CodeState(
 | `totalLines` | `Int` | Number of lines |
 | `currentLine` | `Int` | Line the caret is on, one-based |
 | `currentColumn` | `Int` | Column the caret is on, one-based |
+| `highlights` | `List<LineHighlight>` | Lines drawn with a colored background |
 | `contentChanged` | `Boolean` | Whether the code differs from the last `commitChanges()` |
 
 ### Methods
@@ -94,7 +147,30 @@ fun updateText(newText: String, newCursorPosition: Int = newText.length)
 fun setSelection(start: Int, end: Int)
 // Change tracking
 fun commitChanges()  // Mark as saved
+// Line highlights
+fun toggleHighlight(line: Int, color: Long? = null)  // Add, or remove when already highlighted
+fun isHighlighted(line: Int): Boolean
+fun clearHighlights()
 ```
+
+### Line Highlights
+
+A highlight is a colored band behind one line, drawn across the code and the
+line numbers. Clicking a line number toggles a highlight on that line, and
+`highlights` is observable state, so your UI can react to it.
+```kotlin
+// Highlight line 3 with the theme's default color
+codeState.toggleHighlight(line = 3)
+
+// Highlight line 7 in translucent red (ARGB)
+codeState.toggleHighlight(line = 7, color = 0x40FF0000)
+
+// Remove them all
+codeState.clearHighlights()
+```
+
+Lines are one-based. A highlight stays on its line number when lines are added
+or removed above it.
 
 ### Example: Basic Editor
 ```kotlin
@@ -165,10 +241,12 @@ EditorSettings(
     showLineNumbers: Boolean = true,
     showIndentGuides: Boolean = true,
     fontSize: Int = 14,
-    fontFamily: String = "JetBrains Mono",
+    fontFamily: FontFamily = FontFamily.Monospace,
     enableAutoIndent: Boolean = true,
     enableAutocomplete: Boolean = true,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp),
+    showScrollbars: Boolean = true
 )
 ```
 
@@ -180,6 +258,7 @@ All properties are exposed as `MutableState` for reactive updates:
 |----------|------|-------------|
 | `themeState` | `MutableState<EditorTheme>` | Color theme |
 | `fontSizeState` | `MutableState<Int>` | Font size (8-32) |
+| `fontFamilyState` | `MutableState<FontFamily>` | Font of the code, line numbers and autocomplete |
 | `tabSizeState` | `MutableState<Int>` | Tab width (2-8) |
 | `useTabsState` | `MutableState<Boolean>` | Use tabs vs spaces |
 | `showLineNumbersState` | `MutableState<Boolean>` | Show line numbers |
@@ -187,6 +266,8 @@ All properties are exposed as `MutableState` for reactive updates:
 | `enableAutocompleteState` | `MutableState<Boolean>` | Enable autocomplete |
 | `enableAutoIndentState` | `MutableState<Boolean>` | Enable auto-indent |
 | `readOnlyState` | `MutableState<Boolean>` | Read-only mode |
+| `contentPaddingState` | `MutableState<PaddingValues>` | Space between the code and the editor's edges |
+| `showScrollbarsState` | `MutableState<Boolean>` | Show scroll bars while the code overflows |
 
 ### Methods
 ```kotlin
@@ -201,6 +282,21 @@ fun toggleIndentGuides()
 fun toggleReadOnly()
 fun getIndentString(): String
 ```
+
+### Example: Custom Font
+```kotlin
+// A font from your app's Compose resources
+val jetBrainsMono = FontFamily(Font(Res.font.jetbrains_mono_regular))
+
+val settings = remember(jetBrainsMono) {
+    EditorSettings(fontFamily = jetBrainsMono)
+}
+
+// Or change it while the editor is on screen
+settings.fontFamilyState.value = FontFamily.Monospace
+```
+
+Use a monospaced font, so columns and indentation guides line up.
 
 ---
 
@@ -565,3 +661,12 @@ val myTheme = EditorTheme(
 )
 
 val settings = EditorSettings(theme = myTheme)
+```
+
+`SyntaxColors` also takes two optional colors for documentation comments such
+as KDoc:
+
+| Color | Used for | When not set |
+|-------|----------|--------------|
+| `docComment` | The text of a `/** */` comment | Same as `comment` |
+| `docTag` | Tags and links inside it, such as `@param` and `[name]` | Same as `keyword` |

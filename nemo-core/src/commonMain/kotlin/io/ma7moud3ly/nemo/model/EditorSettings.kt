@@ -1,7 +1,9 @@
 package io.ma7moud3ly.nemo.model
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.mutableStateOf
-import io.ma7moud3ly.nemo.model.EditorThemes
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.min
 
@@ -14,10 +16,14 @@ import kotlin.math.min
  * @param showLineNumbers Display line numbers in the gutter
  * @param showIndentGuides Draw vertical guides at each indentation level
  * @param fontSize Font size
- * @param fontFamily Font family name (default: JetBrains Mono)
+ * @param fontFamily Font of the code, the line numbers and the autocomplete popup
  * @param enableAutoIndent Automatically indent new lines
  * @param enableAutocomplete Show autocomplete suggestions
  * @param readOnly Make the editor non-editable
+ * @param contentPadding Space between the code and the edges of the editor.
+ *   The line numbers use its top and bottom values, so they stay aligned
+ *   with their lines.
+ * @param showScrollbars Show a scroll bar while the code is larger than the editor
  */
 data class EditorSettings(
     // Theme
@@ -31,12 +37,16 @@ data class EditorSettings(
     private val showLineNumbers: Boolean = true,
     private val showIndentGuides: Boolean = true,
     private val fontSize: Int = 14,
-    val fontFamily: String = "JetBrains Mono",
+    private val fontFamily: FontFamily = FontFamily.Monospace,
 
     // Features
     private val enableAutoIndent: Boolean = true,
     private val enableAutocomplete: Boolean = true,
     private val readOnly: Boolean = false,
+
+    // Layout
+    private val contentPadding: PaddingValues = PaddingValues(start = 4.dp, top = 4.dp, end = 4.dp),
+    private val showScrollbars: Boolean = true,
 ) {
     init {
         require(tabSize in 2..8) { "Tab size must be between 2 and 8" }
@@ -49,9 +59,12 @@ data class EditorSettings(
     val showLineNumbersState = mutableStateOf(showLineNumbers)
     val showIndentGuidesState = mutableStateOf(showIndentGuides)
     val fontSizeState = mutableStateOf(fontSize)
+    val fontFamilyState = mutableStateOf(fontFamily)
     val enableAutoIndentState = mutableStateOf(enableAutoIndent)
     val enableAutocompleteState = mutableStateOf(enableAutocomplete)
     val readOnlyState = mutableStateOf(readOnly)
+    val contentPaddingState = mutableStateOf(contentPadding)
+    val showScrollbarsState = mutableStateOf(showScrollbars)
 
     fun toggleReadOnly() {
         readOnlyState.value = !readOnlyState.value
@@ -103,10 +116,12 @@ data class EditorSettings(
         showLineNumbersState.value,
         showIndentGuidesState.value,
         fontSizeState.value,
-        fontFamily,
+        fontFamilyState.value,
         enableAutoIndentState.value,
         enableAutocompleteState.value,
-        readOnlyState.value
+        readOnlyState.value,
+        contentPaddingState.value,
+        showScrollbarsState.value
     )
 
     /**
