@@ -54,6 +54,58 @@ fun NemoCodeEditor(
 - `settings` - Editor configuration
 - `modifier` - Compose modifier
 
+### NemoCodeField
+
+A syntax-highlighted input field for code, such as a REPL prompt. It shares
+`CodeState`, the highlighting and the undo history with the editor, but it has
+no line numbers, indent guides or autocomplete. It is as tall as its text and
+does not take focus on its own.
+```kotlin
+@Composable
+fun NemoCodeField(
+    state: CodeState,
+    modifier: Modifier = Modifier,
+    settings: EditorSettings = EditorSettings(),
+    singleLine: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    focusRequester: FocusRequester = remember { FocusRequester() }
+)
+```
+
+**Parameters:**
+- `state` - Field content state; read the text from `state.code`
+- `settings` - Theme, font size, indentation and read-only mode
+- `singleLine` - Keeps the text on one line; Enter then runs the keyboard action
+- `keyboardOptions` - Keyboard type and the action shown on the keyboard
+- `keyboardActions` - What runs when the keyboard action is pressed
+- `focusRequester` - Lets the caller move focus to the field
+
+### Example: REPL Prompt
+```kotlin
+@Composable
+fun ReplPrompt(onRun: (String) -> Unit) {
+    val codeState = rememberCodeState(code = "", language = Language.PYTHON)
+    val focusManager = LocalFocusManager.current
+
+    NemoCodeField(
+        state = codeState,
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+        keyboardActions = KeyboardActions(
+            onSend = {
+                onRun(codeState.code)
+                codeState.updateText("")
+                focusManager.clearFocus()
+            }
+        )
+    )
+}
+```
+
+The field draws no background, so place it on a surface that suits the theme.
+
 ---
 
 ## 📝 CodeState
