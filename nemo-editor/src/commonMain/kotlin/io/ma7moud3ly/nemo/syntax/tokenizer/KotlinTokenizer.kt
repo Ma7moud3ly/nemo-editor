@@ -100,7 +100,7 @@ class KotlinTokenizer : LanguageTokenizer() {
                     val type = when {
                         word in keywords -> TokenType.KEYWORD
                         word in builtInTypes -> TokenType.TYPE
-                        word[0].isUpperCase() -> TokenType.TYPE
+                        word.firstOrNull()?.isUpperCase() == true -> TokenType.TYPE
                         isFunctionCall(text, end) -> TokenType.FUNCTION
                         else -> TokenType.VARIABLE
                     }
