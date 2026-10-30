@@ -1,8 +1,14 @@
 package io.ma7moud3ly.nemo.syntax.tokenizer
 
+import io.ma7moud3ly.nemo.lsp.completion.ComposeBindings
 import io.ma7moud3ly.nemo.model.Token
 import io.ma7moud3ly.nemo.model.TokenType
 
+/**
+ * Tokenizer for Kotlin Multiplatform code. Calls to composables, such as
+ * `Column {` or a `Greeting()` declared in the file, are marked as functions
+ * rather than types.
+ */
 class KotlinTokenizer : LanguageTokenizer() {
     override val keywords = setOf(
         // Control flow
@@ -33,6 +39,11 @@ class KotlinTokenizer : LanguageTokenizer() {
     override fun tokenize(text: String): List<Token> {
         val tokens = mutableListOf<Token>()
         var i = 0
+        // Functions declared in the file with a capitalized name, such as
+        // `fun Greeting()`, which in Compose code are composables.
+        val declaredComposables by lazy {
+            COMPOSABLE_DECLARATION_REGEX.findAll(text).map { it.groupValues[1] }.toSet()
+        }
 
         while (i < text.length) {
             when {
@@ -100,7 +111,12 @@ class KotlinTokenizer : LanguageTokenizer() {
                     val type = when {
                         word in keywords -> TokenType.KEYWORD
                         word in builtInTypes -> TokenType.TYPE
-                        word.firstOrNull()?.isUpperCase() == true -> TokenType.TYPE
+                        word.firstOrNull()?.isUpperCase() == true -> {
+                            val isComposable = word in ComposeBindings.composables ||
+                                    word in declaredComposables
+                            if (isComposable && isCallOrLambda(text, end)) TokenType.FUNCTION
+                            else TokenType.TYPE
+                        }
                         isFunctionCall(text, end) -> TokenType.FUNCTION
                         else -> TokenType.VARIABLE
                     }
@@ -267,6 +283,13 @@ class KotlinTokenizer : LanguageTokenizer() {
         return i < text.length && text[i] == '('
     }
 
+    /** True when the name ending at [position] is called, as in `Column(` or `Column {`. */
+    private fun isCallOrLambda(text: String, position: Int): Boolean {
+        var i = position
+        while (i < text.length && text[i].isWhitespace()) i++
+        return i < text.length && (text[i] == '(' || text[i] == '{')
+    }
+
     override fun isFunctionDef(text: String, position: Int): Boolean {
         TODO("Not yet implemented")
     }
@@ -278,5 +301,8 @@ class KotlinTokenizer : LanguageTokenizer() {
     private companion object {
         /** Matches a tag such as `@param`, or a link such as `[Foo.bar]`. */
         val DOC_TAG_REGEX = Regex("""@[A-Za-z]+|\[[A-Za-z_][\w.]*\]""")
+
+        /** Matches a function declared with a capitalized name, such as `fun Greeting(`. */
+        val COMPOSABLE_DECLARATION_REGEX = Regex("""\bfun\s+([A-Z]\w*)\s*\(""")
     }
 }

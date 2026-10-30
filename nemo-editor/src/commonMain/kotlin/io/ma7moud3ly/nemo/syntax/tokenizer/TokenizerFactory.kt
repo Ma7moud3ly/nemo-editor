@@ -7,7 +7,7 @@ object TokenizerFactory {
         return when (language) {
             Language.KOTLIN -> KotlinTokenizer()
             Language.PYTHON, Language.MICRO_PYTHON -> PythonTokenizer()
-            else -> KotlinTokenizer()
+            else -> CStyleTokenizer.forLanguage(language) ?: KotlinTokenizer()
         }
     }
 }
