@@ -47,12 +47,6 @@ The editor is the only required module. Two more are optional, and all modules s
 ### Render an editor
 
 ```kotlin
-commonMain.dependencies {
-    implementation("io.github.ma7moud3ly:nemo-editor:x.x.x")
-}
-```
-
-```kotlin
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

@@ -9,6 +9,39 @@ on:
       - main
 
 jobs:
+  # ---- Run the tests of every module on the JVM ----
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The common tests of each module, run on its JVM target
+      - name: Run tests
+        run: |
+          chmod +x gradlew
+          ./gradlew jvmTest --continue
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
+
   # ---- Build Android + WASM + Linux desktop ----
   build-linux:
     runs-on: ubuntu-latest
