@@ -45,7 +45,7 @@ internal fun AppGraph(viewModel: NemoEditorViewModel) {
 
         dialog<AppRoutes.Dialog.About> {
             AboutNemoDialog(
-                appVersion = viewModel.appVersion,
+                appVersion = BuildInfo.VERSION_NAME,
                 onDismiss = { navController.popBackStack() }
             )
         }

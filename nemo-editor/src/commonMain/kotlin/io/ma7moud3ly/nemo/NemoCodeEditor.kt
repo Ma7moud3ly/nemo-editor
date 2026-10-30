@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -34,7 +33,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -111,8 +109,9 @@ fun NemoCodeEditor(
         if (showGuides) IndentGuideCalculator.compute(state.code, tabSize) else null
     }
 
-    // Track scroll state for autocomplete positioning
-    val scrollState = rememberScrollState()
+    // Track scroll state for autocomplete positioning. Each document has its
+    // own, so a newly shown one starts at the top, not where another was.
+    val scrollState = remember(state) { ScrollState(0) }
 
     // Autocomplete state
     val autocompleteState = remember { AutocompleteState() }
@@ -223,7 +222,7 @@ private fun EditorContent(
     settings: EditorSettings,
     autocompleteState: AutocompleteState
 ) {
-    val horizontalScrollState = rememberScrollState()
+    val horizontalScrollState = remember(state) { ScrollState(0) }
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
@@ -364,12 +363,19 @@ private fun EditorContent(
             )
 
             CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+                // The field draws the colored code itself, so the document is laid
+                // out once, and the caret and selection always match the glyphs.
+                val highlighting = remember(highlightedCode) {
+                    HighlightTransformation(highlightedCode)
+                }
                 BasicTextField(
                     value = code,
                     onValueChange = onValueChange,
                     readOnly = readOnly,
-                    textStyle = codeTextStyle.copy(color = Color.Transparent),
+                    textStyle = codeTextStyle.copy(color = Color(theme.foreground)),
                     cursorBrush = SolidColor(Color(theme.syntax.keyword)),
+                    visualTransformation = highlighting,
+                    onTextLayout = { codeTextLayout = it },
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(scrollState)
@@ -392,26 +398,15 @@ private fun EditorContent(
                                     activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
                                 )
                         ) {
-                            if (code.text.isEmpty()) {
+                            if (code.text.isEmpty() && !readOnly) {
                                 Text(
-                                    if (readOnly) "" else "Start typing...",
+                                    "Start typing...",
                                     style = codeTextStyle.copy(
                                         color = Color(theme.lineNumber)
-                                    ),
-                                    onTextLayout = { codeTextLayout = it }
-                                )
-                            } else {
-                                Text(
-                                    text = highlightedCode,
-                                    style = codeTextStyle,
-                                    softWrap = false,
-                                    maxLines = Int.MAX_VALUE,
-                                    onTextLayout = { codeTextLayout = it }
+                                    )
                                 )
                             }
-                            Box(modifier = Modifier.alpha(1f)) {
-                                innerTextField()
-                            }
+                            innerTextField()
                         }
                     }
                 )

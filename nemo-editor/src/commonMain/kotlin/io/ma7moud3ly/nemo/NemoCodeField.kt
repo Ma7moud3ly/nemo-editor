@@ -1,14 +1,12 @@
 package io.ma7moud3ly.nemo
 
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -95,6 +93,9 @@ fun NemoCodeField(
         backgroundColor = Color(theme.selection).copy(alpha = 0.4f)
     )
 
+    // The field draws the colored code itself, so it is laid out once
+    val highlighting = remember(highlightedCode) { HighlightTransformation(highlightedCode) }
+
     CompositionLocalProvider(LocalTextSelectionColors provides selectionColors) {
         BasicTextField(
             value = state.value,
@@ -121,26 +122,14 @@ fun NemoCodeField(
                     }
                     breaksLine
                 }
-                // The field scrolls as a whole, so the highlighted text drawn
-                // over it always stays aligned with the text being edited.
                 .horizontalScroll(rememberScrollState()),
             readOnly = readOnly,
             singleLine = singleLine,
-            textStyle = codeTextStyle.copy(color = Color.Transparent),
+            textStyle = codeTextStyle.copy(color = Color(theme.foreground)),
+            visualTransformation = highlighting,
             cursorBrush = SolidColor(Color(theme.syntax.keyword)),
             keyboardOptions = keyboardOptions,
-            keyboardActions = keyboardActions,
-            decorationBox = { innerTextField ->
-                Box {
-                    Text(
-                        text = highlightedCode,
-                        style = codeTextStyle,
-                        softWrap = false,
-                        maxLines = if (singleLine) 1 else Int.MAX_VALUE
-                    )
-                    innerTextField()
-                }
-            }
+            keyboardActions = keyboardActions
         )
     }
 }

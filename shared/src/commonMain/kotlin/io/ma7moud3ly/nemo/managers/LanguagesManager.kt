@@ -6,7 +6,7 @@ import io.ma7moud3ly.nemo.model.LanguageDetails
 
 class LanguagesManager {
     val supportedLanguages = listOf(
-        LanguageDetails("Kotlin", Language.KOTLIN, "kt", "🟣", Color(0xFF7F52FF), "Modern JVM language"),
+        LanguageDetails("Kotlin", Language.KOTLIN, "kt", "🟣", Color(0xFF7F52FF), "Kotlin Multiplatform and Compose"),
         LanguageDetails("Java", Language.JAVA, "java", "☕", Color(0xFFE76F00), "Object-oriented programming"),
         LanguageDetails("Python", Language.PYTHON, "py", "🐍", Color(0xFF3776AB), "General-purpose scripting"),
         LanguageDetails("MicroPython", Language.MICRO_PYTHON, "mpy", "🤖", Color(0xFF2B7489), "Python for microcontrollers"),

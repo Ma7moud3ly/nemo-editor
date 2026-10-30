@@ -49,8 +49,10 @@ import io.ma7moud3ly.nemo.model.CodeState
 import io.ma7moud3ly.nemo.model.CompletionItem
 import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -106,16 +108,20 @@ fun AutocompletePopup(
         }
         lastCode = state.code
 
+        val code = state.code
         val cursorPos = state.cursorPosition
-        val textBeforeCursor = state.code.take(cursorPos)
-        val lastChar = textBeforeCursor.lastOrNull()
+        val lastChar = code.getOrNull(cursorPos - 1)
 
         // Show autocomplete if typing letters, digits, or after dot
         if (lastChar != null && (lastChar.isLetterOrDigit() || lastChar == '.')) {
             coroutineScope.launch {
                 val provider = completionProvider ?: return@launch
-                val completions = provider.provideCompletions(state.code, cursorPos)
-                autocompleteState.show(completions)
+                // Providers scan the whole text, so keep that off the main thread
+                val completions = withContext(Dispatchers.Default) {
+                    provider.provideCompletions(code, cursorPos)
+                }
+                // Drop the result when the text changed while it was computed
+                if (state.code == code) autocompleteState.show(completions)
             }
         } else {
             autocompleteState.hide()

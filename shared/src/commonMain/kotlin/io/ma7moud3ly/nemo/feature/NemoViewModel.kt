@@ -38,8 +38,6 @@ class NemoEditorViewModel : ViewModel() {
         private val DEFAULT_THEME = EditorThemes.NEMO_DARK
     }
 
-    val appVersion = "1.0.4"
-
     private var formatManager: FormatManager? = null
     private var editOperations: EditOperations? = null
     val filesManager = FilesManager()
@@ -270,7 +268,10 @@ class NemoEditorViewModel : ViewModel() {
             if (tab.file.exists()) {
                 val content = filesManager.readFile(tab.file)
                 if (content != null) {
-                    tabsManager.activeCodeState?.updateText(content)
+                    // Keep the caret where it was rather than at the end
+                    tabsManager.activeCodeState?.let { state ->
+                        state.updateText(content, state.cursorPosition.coerceAtMost(content.length))
+                    }
                     tabsManager.commitChanges(tab.id)
                 }
             }

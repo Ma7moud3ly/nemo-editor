@@ -2,8 +2,8 @@
 
 Complete reference for integrating NemoCodeEditor into your Kotlin Multiplatform projects.
 
-![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)
-![Compose](https://img.shields.io/badge/Compose-1.7+-4285F4?logo=jetpackcompose&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4+-7F52FF?logo=kotlin&logoColor=white)
+![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.12+-4285F4?logo=jetpackcompose&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Desktop%20%7C%20Web-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -126,7 +126,7 @@ CodeState(
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `code` | `String` | Current code content |
+| `code` | `String` | Current code content. Line endings are always `\n`: `\r\n` and `\r` are converted |
 | `language` | `Language` | Programming language |
 | `cursorPosition` | `Int` | Caret offset, zero-based |
 | `selection` | `TextRange` | Current selection |
@@ -544,29 +544,48 @@ enum class Language {
 }
 ```
 
-Any value can be passed to `CodeState`, but only three have a dedicated
-implementation behind them. The rest fall back to a generic tokenizer and have
-no formatter, error detector or completion provider.
+Any value can be passed to `CodeState`. Kotlin, Python and MicroPython have a
+full implementation behind them. The C-style languages (Java, JavaScript,
+TypeScript, React JSX and TSX, C, C++, C headers, Go, Rust, Swift, Dart and PHP)
+have their own syntax highlighting. The rest fall back to a generic tokenizer.
 
-| Capability | Kotlin | Python | MicroPython | Others |
-|------------|--------|--------|-------------|--------|
-| Syntax highlighting | ✅ | ✅ | ✅ | generic fallback |
-| Code formatting | ✅ | ✅ | ✅ | ❌ |
-| Autocomplete | ✅ | ✅ | ✅ | ❌ |
-| Error detection | ✅ | ✅ | ✅ | ❌ |
-| Auto-indentation | ✅ | ✅ | ✅ | Java, JavaScript only |
+| Capability | Kotlin | Python | MicroPython | C-style languages | Others |
+|------------|--------|--------|-------------|-------------------|--------|
+| Syntax highlighting | ✅ | ✅ | ✅ | ✅ | generic fallback |
+| Code formatting | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Autocomplete | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Error detection | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Auto-indentation | ✅ | ✅ | ✅ | Java, JavaScript only | ❌ |
 
 #### Syntax Highlighting
 Color-coded keywords, types and classes, functions and methods, variables,
-strings, numbers, comments, operators and punctuation.
+strings, numbers, comments, operators and punctuation. In Kotlin, calls to
+composables, such as `Column {` or a `Greeting()` declared in the file, are
+colored as functions.
 
 #### Code Formatting
-Smart indentation, bracket matching, whitespace normalisation, and
-language-specific rules such as Python block indentation or Kotlin brace style.
+- **Kotlin** — indents each line by the brackets left open before it, wherever
+  they are on their line, indents call chains that start with `.`, and fixes
+  spacing. Strings and comments are kept as written.
+- **Python / MicroPython** — PEP 8 style. Keeps the block structure, gives the
+  lines inside brackets a hanging indent or lines them up after the bracket,
+  puts spaces around operators and after commas but none around the `=` of a
+  keyword argument, two spaces before an inline comment, and at most two blank
+  lines in a row. Consecutive top-level imports are sorted where they are.
 
 #### Autocomplete
-Keywords, built-in functions, types and classes, variables in scope, methods
-after dot notation, and snippets.
+- **Kotlin** — keywords, types, functions and the names declared in the file,
+  plus Compose: annotations after `@`, composables, state and effect functions,
+  members after `Modifier.` (also in the middle of a chain), `Color.`,
+  `Alignment.`, `MaterialTheme.colorScheme.`, `Icons.Default.` and `16.`,
+  members of lambda scopes such as `items`, and the parameters of a call, such
+  as `modifier = ` inside `Column(`.
+- **Python** — keywords, built-in functions, types and the names in the file.
+- **MicroPython** — modules and their members, hardware classes and their
+  members, members of a variable or call result of a known class (`led.` after
+  `led = Pin(2)`, or `requests.get(url).`), call parameters such as `mode=`
+  inside `Pin(2, `, and snippets such as `wifi`, `i2c` and `led` that insert
+  ready-made code.
 
 #### Error Detection
 - **Kotlin** — missing brackets, syntax errors
@@ -600,7 +619,9 @@ Enabled by default; control it with `showIndentGuides` on `EditorSettings`, or
 
 ## 🌐 Adding a Language
 
-1. Implement `Tokenizer` and register it in `TokenizerFactory`
+1. Implement `LanguageTokenizer` and register it in `TokenizerFactory`. For a
+   language with C-style syntax, a `CStyleTokenizer` with its keywords and
+   built-in types may be enough.
 2. Optionally implement `CodeFormatter`, `ErrorDetector` and
    `CompletionProvider`, registering each in its matching factory
 3. Add the case to `AutoIndentHandler` if the language needs indent rules
