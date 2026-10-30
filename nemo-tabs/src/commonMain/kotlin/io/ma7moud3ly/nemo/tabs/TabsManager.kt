@@ -77,10 +77,12 @@ class TabsManager(
         val tab = NemoTab(
             id = Uuid.random().toString(),
             tabFile = document,
+            // The caret starts at the top, so the editor does not scroll to the end
             codeState = CodeState(
                 initialCode = content,
                 language = language,
-                isDirty = isDirty
+                isDirty = isDirty,
+                initialCursorPosition = 0
             )
         )
         _tabs.add(tab)
@@ -102,7 +104,11 @@ class TabsManager(
         val codeState = if (language == null || language == tab.codeState.language) {
             tab.codeState
         } else {
-            CodeState(initialCode = tab.content, language = language)
+            CodeState(
+                initialCode = tab.content,
+                language = language,
+                initialCursorPosition = tab.codeState.cursorPosition
+            )
         }
         val newTab = tab.copy(tabFile = document, codeState = codeState)
         _tabs[index] = newTab

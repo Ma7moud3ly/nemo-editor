@@ -270,6 +270,11 @@ class PersistenceManager(
                 val content = if (file.exists()) filesManager.readFile(file).orEmpty()
                 else tabData.tempContent
                 tabsManager.openFile(file, content)
+                // Put the caret back where it was, so the tab opens at the same place
+                tabsManager.activeCodeState?.let { state ->
+                    val caret = tabData.cursorPosition.coerceIn(0, state.code.length)
+                    state.setSelection(caret, caret)
+                }
             }
 
             println("$TAG: Restored ${savedTabDataList.size} tabs")

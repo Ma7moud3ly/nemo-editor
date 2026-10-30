@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -110,8 +109,9 @@ fun NemoCodeEditor(
         if (showGuides) IndentGuideCalculator.compute(state.code, tabSize) else null
     }
 
-    // Track scroll state for autocomplete positioning
-    val scrollState = rememberScrollState()
+    // Track scroll state for autocomplete positioning. Each document has its
+    // own, so a newly shown one starts at the top, not where another was.
+    val scrollState = remember(state) { ScrollState(0) }
 
     // Autocomplete state
     val autocompleteState = remember { AutocompleteState() }
@@ -222,7 +222,7 @@ private fun EditorContent(
     settings: EditorSettings,
     autocompleteState: AutocompleteState
 ) {
-    val horizontalScrollState = rememberScrollState()
+    val horizontalScrollState = remember(state) { ScrollState(0) }
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
