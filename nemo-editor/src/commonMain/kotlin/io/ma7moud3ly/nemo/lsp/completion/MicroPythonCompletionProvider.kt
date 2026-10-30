@@ -7,8 +7,11 @@ import io.ma7moud3ly.nemo.model.CompletionItem
  *
  * Extends the plain Python vocabulary with the hardware oriented modules,
  * classes and constants that MicroPython firmwares expose (machine, network,
- * time, esp32, neopixel ...), plus member completion after a known module,
- * peripheral class, or a variable assigned from one.
+ * time, esp32, neopixel ...). It also suggests:
+ * - members after a known module, a known class, a variable assigned from one,
+ *   or a call that returns one, such as `Pin(2).` or `requests.get(url).`
+ * - the parameters of a known call, such as `mode=` in `Pin(2, mo`
+ * - snippets, such as `wifi` or `i2c`, that insert ready-made code
  */
 class MicroPythonCompletionProvider : CompletionProvider() {
 
@@ -44,177 +47,19 @@ class MicroPythonCompletionProvider : CompletionProvider() {
         "RuntimeError", "NotImplementedError", "StopIteration",
         "KeyboardInterrupt",
         // machine peripherals
-        "Pin", "Signal", "ADC", "PWM", "DAC", "UART", "SPI", "SoftSPI",
-        "I2C", "SoftI2C", "I2S", "RTC", "Timer", "WDT", "SDCard",
+        "Pin", "Signal", "ADC", "ADCBlock", "PWM", "DAC", "UART", "SPI",
+        "SoftSPI", "I2C", "SoftI2C", "I2S", "RTC", "Timer", "WDT", "SDCard",
         // other commonly used classes
         "NeoPixel", "WLAN", "BLE", "OneWire", "DS18X20", "DHT11", "DHT22",
-        "FrameBuffer", "StateMachine", "Partition"
+        "FrameBuffer", "StateMachine", "Partition", "NVS", "MQTTClient",
+        "ESPNow", "SSD1306_I2C", "SSD1306_SPI", "Event", "Lock"
     )
 
-    /** Modules shipped with most MicroPython ports (both `u`-prefixed and plain). */
-    private val modules = listOf(
-        "machine", "micropython", "network", "time", "utime", "sys", "usys",
-        "os", "uos", "gc", "json", "ujson", "math", "cmath", "random",
-        "urandom", "struct", "ustruct", "binascii", "ubinascii", "hashlib",
-        "uhashlib", "socket", "usocket", "ssl", "ussl", "select", "uselect",
-        "collections", "ucollections", "io", "uio", "re", "ure", "errno",
-        "uerrno", "heapq", "uheapq", "asyncio", "uasyncio", "array", "esp",
-        "esp32", "rp2", "pyb", "bluetooth", "neopixel", "onewire", "ds18x20",
-        "dht", "framebuf", "webrepl", "_thread", "urequests", "umqtt"
-    )
+    override val snippets = MicroPythonBindings.snippets
 
-    /** Members suggested right after `<module>.` */
-    private val moduleMembers: Map<String, List<String>> = mapOf(
-        "machine" to listOf(
-            "Pin", "Signal", "ADC", "PWM", "DAC", "UART", "SPI", "SoftSPI",
-            "I2C", "SoftI2C", "I2S", "RTC", "Timer", "WDT", "SDCard",
-            "reset", "soft_reset", "reset_cause", "bootloader", "freq",
-            "deepsleep", "lightsleep", "idle", "wake_reason", "unique_id",
-            "disable_irq", "enable_irq", "time_pulse_us", "mem8", "mem16",
-            "mem32", "PWRON_RESET", "HARD_RESET", "WDT_RESET", "DEEPSLEEP_RESET"
-        ),
-        "time" to listOf(
-            "sleep", "sleep_ms", "sleep_us", "ticks_ms", "ticks_us", "ticks_cpu",
-            "ticks_add", "ticks_diff", "time", "time_ns", "localtime", "gmtime",
-            "mktime"
-        ),
-        "network" to listOf(
-            "WLAN", "LAN", "STA_IF", "AP_IF", "hostname", "country", "phy_mode",
-            "STAT_IDLE", "STAT_CONNECTING", "STAT_GOT_IP", "STAT_WRONG_PASSWORD",
-            "STAT_NO_AP_FOUND", "STAT_CONNECT_FAIL"
-        ),
-        "os" to listOf(
-            "listdir", "ilistdir", "mkdir", "rmdir", "remove", "rename", "stat",
-            "statvfs", "chdir", "getcwd", "sync", "uname", "urandom", "mount",
-            "umount", "VfsFat", "VfsLfs2", "dupterm"
-        ),
-        "sys" to listOf(
-            "argv", "byteorder", "exit", "implementation", "maxsize", "modules",
-            "path", "platform", "print_exception", "stdin", "stdout", "stderr",
-            "version", "version_info"
-        ),
-        "gc" to listOf(
-            "collect", "disable", "enable", "isenabled", "mem_alloc", "mem_free",
-            "threshold"
-        ),
-        "micropython" to listOf(
-            "const", "opt_level", "alloc_emergency_exception_buf", "mem_info",
-            "qstr_info", "stack_use", "heap_lock", "heap_unlock", "kbd_intr",
-            "schedule", "native", "viper", "asm_thumb"
-        ),
-        "json" to listOf("dump", "dumps", "load", "loads"),
-        "math" to listOf(
-            "pi", "e", "sqrt", "pow", "exp", "log", "sin", "cos", "tan", "asin",
-            "acos", "atan", "atan2", "ceil", "floor", "trunc", "fabs", "fmod",
-            "radians", "degrees", "isnan", "isinf", "modf", "copysign"
-        ),
-        "random" to listOf(
-            "random", "randint", "randrange", "uniform", "choice", "getrandbits",
-            "seed", "shuffle"
-        ),
-        "struct" to listOf("calcsize", "pack", "pack_into", "unpack", "unpack_from"),
-        "binascii" to listOf("hexlify", "unhexlify", "a2b_base64", "b2a_base64", "crc32"),
-        "esp" to listOf(
-            "osdebug", "flash_size", "flash_read", "flash_write", "flash_erase",
-            "flash_user_start", "sleep_type", "deepsleep"
-        ),
-        "esp32" to listOf(
-            "Partition", "NVS", "RMT", "ULP", "wake_on_touch", "wake_on_ext0",
-            "wake_on_ext1", "raw_temperature", "hall_sensor", "gpio_deep_sleep_hold",
-            "HEAP_DATA", "HEAP_EXEC", "WAKEUP_ALL_LOW", "WAKEUP_ANY_HIGH"
-        ),
-        "rp2" to listOf(
-            "PIO", "StateMachine", "asm_pio", "asm_pio_encode", "bootsel_button",
-            "country", "Flash"
-        ),
-        "bluetooth" to listOf("BLE", "UUID", "FLAG_READ", "FLAG_WRITE", "FLAG_NOTIFY"),
-        "neopixel" to listOf("NeoPixel"),
-        "framebuf" to listOf(
-            "FrameBuffer", "MONO_VLSB", "MONO_HLSB", "MONO_HMSB", "RGB565",
-            "GS2_HMSB", "GS4_HMSB", "GS8"
-        ),
-        "asyncio" to listOf(
-            "run", "sleep", "sleep_ms", "create_task", "gather", "wait_for",
-            "wait_for_ms", "Event", "Lock", "Task", "get_event_loop",
-            "new_event_loop", "run_until_complete", "current_task"
-        ),
-        "socket" to listOf(
-            "socket", "getaddrinfo", "AF_INET", "AF_INET6", "SOCK_STREAM",
-            "SOCK_DGRAM", "SOL_SOCKET", "SO_REUSEADDR"
-        ),
-        "dht" to listOf("DHT11", "DHT22"),
-        "onewire" to listOf("OneWire"),
-        "ds18x20" to listOf("DS18X20")
-    )
-
-    /** Members suggested after an instance of a known peripheral class. */
-    private val classMembers: Map<String, List<String>> = mapOf(
-        "Pin" to listOf(
-            "value", "on", "off", "toggle", "init", "irq", "mode", "pull",
-            "drive", "IN", "OUT", "OPEN_DRAIN", "PULL_UP", "PULL_DOWN",
-            "IRQ_RISING", "IRQ_FALLING", "IRQ_LOW_LEVEL", "IRQ_HIGH_LEVEL"
-        ),
-        "Signal" to listOf("value", "on", "off"),
-        "ADC" to listOf(
-            "read", "read_u16", "read_uv", "atten", "width", "init",
-            "ATTN_0DB", "ATTN_2_5DB", "ATTN_6DB", "ATTN_11DB"
-        ),
-        "PWM" to listOf("freq", "duty", "duty_u16", "duty_ns", "init", "deinit"),
-        "DAC" to listOf("write", "write_timed"),
-        "UART" to listOf(
-            "init", "deinit", "read", "readline", "readinto", "write", "any",
-            "sendbreak", "irq", "flush", "txdone"
-        ),
-        "I2C" to listOf(
-            "init", "deinit", "scan", "start", "stop", "readfrom", "readfrom_into",
-            "writeto", "writevto", "readfrom_mem", "readfrom_mem_into", "writeto_mem"
-        ),
-        "SoftI2C" to listOf(
-            "init", "deinit", "scan", "start", "stop", "readfrom", "writeto",
-            "readfrom_mem", "writeto_mem"
-        ),
-        "SPI" to listOf("init", "deinit", "read", "readinto", "write", "write_readinto"),
-        "SoftSPI" to listOf("init", "deinit", "read", "readinto", "write", "write_readinto"),
-        "Timer" to listOf("init", "deinit", "value", "ONE_SHOT", "PERIODIC"),
-        "RTC" to listOf(
-            "datetime", "init", "now", "alarm", "alarm_left", "cancel", "irq", "memory"
-        ),
-        "WDT" to listOf("feed"),
-        "WLAN" to listOf(
-            "active", "connect", "disconnect", "isconnected", "scan", "status",
-            "ifconfig", "ipconfig", "config"
-        ),
-        "NeoPixel" to listOf("fill", "write"),
-        "DS18X20" to listOf("scan", "convert_temp", "read_temp", "read_scratch"),
-        "DHT11" to listOf("measure", "temperature", "humidity"),
-        "DHT22" to listOf("measure", "temperature", "humidity"),
-        "FrameBuffer" to listOf(
-            "fill", "pixel", "hline", "vline", "line", "rect", "fill_rect",
-            "text", "scroll", "blit", "ellipse", "poly"
-        )
-    )
-
-    override val snippets = mapOf(
-        "def" to "def \${1:name}(\${2:params}):\n    \${0}",
-        "class" to "class \${1:Name}:\n    def __init__(self\${2:, params}):\n        \${0}",
-        "if" to "if \${1:condition}:\n    \${0}",
-        "for" to "for \${1:item} in \${2:items}:\n    \${0}",
-        "while" to "while \${1:condition}:\n    \${0}",
-        "try" to "try:\n    \${1}\nexcept Exception as e:\n    \${0}",
-        "loop" to "while True:\n    \${0}\n    time.sleep(1)",
-        "led" to "led = Pin(\${1:2}, Pin.OUT)\nled.value(\${0:1})",
-        "button" to "\${1:button} = Pin(\${2:0}, Pin.IN, Pin.PULL_UP)\${0}",
-        "pwm" to "pwm = PWM(Pin(\${1:2}), freq=\${2:1000}, duty=\${0:512})",
-        "adc" to "adc = ADC(Pin(\${1:34}))\nvalue = adc.read()\${0}",
-        "i2c" to "i2c = I2C(\${1:0}, scl=Pin(\${2:22}), sda=Pin(\${3:21}), freq=400000)\${0}",
-        "uart" to "uart = UART(\${1:1}, baudrate=\${2:115200}, tx=Pin(\${3:17}), rx=Pin(\${4:16}))\${0}",
-        "timer" to "timer = Timer(\${1:0})\ntimer.init(period=\${2:1000}, mode=Timer.PERIODIC, " +
-                "callback=\${0:handler})",
-        "irq" to "\${1:pin}.irq(trigger=Pin.IRQ_FALLING, handler=\${0:handler})",
-        "wifi" to "wlan = network.WLAN(network.STA_IF)\nwlan.active(True)\n" +
-                "wlan.connect('\${1:ssid}', '\${2:password}')\nwhile not wlan.isconnected():\n" +
-                "    time.sleep(0.5)\nprint(wlan.ifconfig())\${0}"
-    )
+    private val modules = MicroPythonBindings.modules
+    private val moduleMembers = MicroPythonBindings.moduleMembers
+    private val classMembers = MicroPythonBindings.classMembers
 
     override suspend fun provideCompletions(text: String, position: Int): List<CompletionItem> {
         val cursor = position.coerceIn(0, text.length)
@@ -225,13 +70,20 @@ class MicroPythonCompletionProvider : CompletionProvider() {
 
         // Member access: complete against the receiver instead of the global scope.
         if (rawPrefix.contains('.')) {
-            return getMemberCompletions(text, rawPrefix).take(MAX_ITEMS)
+            return getMemberCompletions(text, wordStart, rawPrefix).take(MAX_ITEMS)
         }
 
         if (rawPrefix.isEmpty()) return emptyList()
         val prefix = rawPrefix.lowercase()
 
-        val completions = mutableListOf<CompletionItem>()
+        // On an `import x` / `from x` line only module names make sense.
+        val currentLine = text.take(cursor).substringAfterLast('\n')
+        if (IMPORT_LINE_REGEX.containsMatchIn(currentLine)) {
+            return getContextAwareCompletions(text, cursor, rawPrefix).take(MAX_ITEMS)
+        }
+
+        // Parameters of the call around the cursor come first
+        val completions = getParameterCompletions(text, wordStart, rawPrefix).toMutableList()
 
         // Keywords - just insert the keyword, not the snippet
         keywords.filter { it.lowercase().startsWith(prefix) }.forEach { keyword ->
@@ -241,6 +93,19 @@ class MicroPythonCompletionProvider : CompletionProvider() {
                     kind = CompletionKind.KEYWORD,
                     detail = "keyword",
                     insertText = keyword
+                )
+            )
+        }
+
+        // Snippets, indented to the current line
+        val indent = indentAt(text, wordStart)
+        snippets.filterKeys { it.startsWith(prefix) }.forEach { (trigger, body) ->
+            completions.add(
+                CompletionItem(
+                    label = trigger,
+                    kind = CompletionKind.SNIPPET,
+                    detail = "snippet",
+                    insertText = expandSnippet(body, indent)
                 )
             )
         }
@@ -284,7 +149,8 @@ class MicroPythonCompletionProvider : CompletionProvider() {
         // Context-aware completions
         completions.addAll(getContextAwareCompletions(text, cursor, rawPrefix))
 
-        return completions.distinctBy { it.label }.take(MAX_ITEMS)
+        // A snippet may share its label with a keyword, such as `if`
+        return completions.distinctBy { it.label to it.kind }.take(MAX_ITEMS)
     }
 
     override fun getContextAwareCompletions(
@@ -297,7 +163,7 @@ class MicroPythonCompletionProvider : CompletionProvider() {
         val currentLine = beforeCursor.substringAfterLast('\n')
 
         // On an `import x` / `from x` line only module names make sense.
-        if (Regex("^\\s*(import|from)\\s+[\\w.]*$").containsMatchIn(currentLine)) {
+        if (IMPORT_LINE_REGEX.containsMatchIn(currentLine)) {
             modules.filter { it.startsWith(prefix) }.forEach { module ->
                 completions.add(
                     CompletionItem(
@@ -324,7 +190,7 @@ class MicroPythonCompletionProvider : CompletionProvider() {
         }
 
         // Names pulled in by `from machine import Pin, PWM`
-        Regex("from\\s+(\\w+)\\s+import\\s+([^\\n]+)").findAll(text).forEach { match ->
+        FROM_IMPORT_REGEX.findAll(text).forEach { match ->
             match.groupValues[2].split(',').forEach { part ->
                 val name = part.trim().substringAfterLast(" as ").trim()
                 if (name.isNotEmpty() && name != "*" && name.startsWith(prefix)) {
@@ -389,27 +255,33 @@ class MicroPythonCompletionProvider : CompletionProvider() {
     }
 
     /**
-     * Completions for `receiver.member`, where the receiver is either a known
-     * module, a known peripheral class, or a variable assigned from one.
+     * Completions for `receiver.member`, where the receiver is a known module,
+     * a known class, a variable assigned from one, or a call that returns one.
      */
-    private fun getMemberCompletions(text: String, rawPrefix: String): List<CompletionItem> {
+    private fun getMemberCompletions(
+        text: String,
+        wordStart: Int,
+        rawPrefix: String
+    ): List<CompletionItem> {
         val receiver = rawPrefix.substringBeforeLast('.').substringAfterLast('.')
         val memberPrefix = rawPrefix.substringAfterLast('.')
-        if (receiver.isEmpty()) return emptyList()
+        val module = normalizeModule(receiver)
 
-        val members = moduleMembers[receiver]
-            ?: moduleMembers[receiver.removePrefix("u")]
-            ?: classMembers[receiver]
-            ?: classMembers[inferVariableType(text, receiver)]
-            ?: return emptyList()
+        val (members, detail) = when {
+            // `Pin(2).` - the dot follows a call
+            receiver.isEmpty() -> {
+                val dot = wordStart + rawPrefix.lastIndexOf('.')
+                val type = typeOfCallBefore(text, dot)
+                type?.let { classMembers[it] }?.let { it to type }
+            }
 
-        val detail = when {
-            moduleMembers.containsKey(receiver) ||
-                    moduleMembers.containsKey(receiver.removePrefix("u")) -> "$receiver module"
-
-            classMembers.containsKey(receiver) -> receiver
-            else -> "member"
-        }
+            moduleMembers.containsKey(module) -> moduleMembers.getValue(module) to "$receiver module"
+            classMembers.containsKey(receiver) -> classMembers.getValue(receiver) to receiver
+            else -> {
+                val type = inferVariableType(text, receiver)
+                type?.let { classMembers[it] }?.let { it to type }
+            }
+        } ?: return emptyList()
 
         return members
             .filter { it.startsWith(memberPrefix) }
@@ -429,15 +301,123 @@ class MicroPythonCompletionProvider : CompletionProvider() {
             }
     }
 
-    /** Resolves `led = Pin(2, Pin.OUT)` or `led = machine.Pin(...)` back to `Pin`. */
-    private fun inferVariableType(text: String, variable: String): String? {
-        val match = Regex("\\b${Regex.escape(variable)}\\s*=\\s*(?:\\w+\\.)?(\\w+)\\s*\\(")
-            .findAll(text)
-            .lastOrNull() ?: return null
-        return match.groupValues[1].takeIf { classMembers.containsKey(it) }
+    /**
+     * Parameters of the known call whose argument starts with the word at
+     * [wordStart], such as `mode` in `Pin(2, mo`. Parameters already named in
+     * the call are left out. Picking one inserts `name=`.
+     */
+    private fun getParameterCompletions(
+        text: String,
+        wordStart: Int,
+        prefix: String
+    ): List<CompletionItem> {
+        val open = argumentListStart(text, wordStart) ?: return emptyList()
+        val (qualifier, name) = callBefore(text, open) ?: return emptyList()
+        val key = parameterKey(text, qualifier, name) ?: return emptyList()
+        val named = namedArguments(text, open, wordStart)
+
+        return MicroPythonBindings.parameters.getValue(key)
+            .filter { it !in named && it.startsWith(prefix, ignoreCase = true) }
+            .map {
+                CompletionItem(
+                    label = it,
+                    kind = CompletionKind.PROPERTY,
+                    detail = "parameter of $key",
+                    insertText = "$it="
+                )
+            }
     }
 
+    /** The key in [MicroPythonBindings.parameters] for a call to [qualifier].[name]. */
+    private fun parameterKey(text: String, qualifier: String?, name: String): String? {
+        val parameters = MicroPythonBindings.parameters
+        val candidates = buildList {
+            if (qualifier == null) {
+                add(name)
+                // A function imported with `from time import sleep_ms`
+                importedFrom(text, name)?.let { add("${normalizeModule(it)}.$name") }
+            } else {
+                add("${normalizeModule(qualifier)}.$name")
+                add("$qualifier.$name")
+                inferVariableType(text, qualifier)?.let { add("$it.$name") }
+                // A class reached through its module, such as `machine.Pin(`
+                if (name.first().isUpperCase()) add(name)
+            }
+        }
+        return candidates.firstOrNull { it in parameters }
+    }
+
+    /** Resolves `led = Pin(2, Pin.OUT)` or `r = requests.get(url)` back to its class. */
+    private fun inferVariableType(text: String, variable: String): String? {
+        val match = Regex("\\b${Regex.escape(variable)}\\s*=\\s*(?:([\\w.]+)\\.)?(\\w+)\\s*\\(")
+            .findAll(text)
+            .lastOrNull() ?: return null
+        val qualifier = match.groupValues[1].ifEmpty { null }
+        return typeOfCall(text, qualifier, match.groupValues[2])
+    }
+
+    /** The class returned by the call that ends just before the dot at [dot]. */
+    private fun typeOfCallBefore(text: String, dot: Int): String? {
+        val close = skipWhitespaceBack(text, dot - 1)
+        if (close < 0 || text[close] != ')') return null
+        val open = openingParenOf(text, close) ?: return null
+        val (qualifier, name) = callBefore(text, open) ?: return null
+        return typeOfCall(text, qualifier, name)
+    }
+
+    /** The class a call to [qualifier].[name] returns, when it is a known one. */
+    private fun typeOfCall(text: String, qualifier: String?, name: String): String? {
+        if (classMembers.containsKey(name)) return name
+        val module = qualifier?.substringAfterLast('.') ?: importedFrom(text, name) ?: return null
+        return MicroPythonBindings.returnTypes["${normalizeModule(module)}.$name"]
+    }
+
+    /**
+     * The qualifier and name of the function called with the `(` at [open],
+     * such as `machine` and `Pin` for `machine.Pin(`.
+     */
+    private fun callBefore(text: String, open: Int): Pair<String?, String>? {
+        val nameEnd = skipWhitespaceBack(text, open - 1)
+        val name = identifierEndingAt(text, nameEnd)
+        if (name.isEmpty()) return null
+        val nameStart = nameEnd - name.length + 1
+        val qualifier = if (nameStart > 0 && text[nameStart - 1] == '.') {
+            identifierEndingAt(text, nameStart - 2).ifEmpty { null }
+        } else null
+        return qualifier to name
+    }
+
+    /** The module [name] is imported from with `from module import name`, if any. */
+    private fun importedFrom(text: String, name: String): String? =
+        FROM_IMPORT_REGEX.findAll(text).firstOrNull { match ->
+            match.groupValues[2].split(',').any { it.trim() == name }
+        }?.groupValues?.get(1)?.substringAfterLast('.')
+
+    /** `utime` is `time`, `urequests` is `requests`, and so on. */
+    private fun normalizeModule(name: String): String =
+        if (name !in moduleMembers && name.startsWith("u") && name.drop(1) in moduleMembers) {
+            name.drop(1)
+        } else name
+
+    /** The indentation of the line that holds [index]. */
+    private fun indentAt(text: String, index: Int): String {
+        val lineStart = text.lastIndexOf('\n', index - 1) + 1
+        return text.substring(lineStart, index).takeWhile { it == ' ' || it == '\t' }
+    }
+
+    /** [body] with each field replaced by its default text, and each line indented. */
+    private fun expandSnippet(body: String, indent: String): String =
+        SNIPPET_FIELD_REGEX.replace(body) { it.groupValues[1] }.replace("\n", "\n$indent")
+
     private companion object {
-        const val MAX_ITEMS = 20
+        const val MAX_ITEMS = 30
+
+        val IMPORT_LINE_REGEX = Regex("^\\s*(import|from)\\s+[\\w.]*$")
+
+        /** Matches `from module import a, b`, with the module and the names. */
+        val FROM_IMPORT_REGEX = Regex("from\\s+([\\w.]+)\\s+import\\s+([^\\n]+)")
+
+        /** Matches a snippet field, such as `${1:name}` or `${0}`. */
+        val SNIPPET_FIELD_REGEX = Regex("""\$\{\d+(?::([^}]*))?\}""")
     }
 }

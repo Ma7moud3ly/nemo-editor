@@ -268,8 +268,7 @@ class KotlinCompletionProvider : CompletionProvider() {
     ): List<CompletionItem> {
         val open = argumentListStart(text, wordStart) ?: return emptyList()
 
-        var nameEnd = open - 1
-        while (nameEnd >= 0 && text[nameEnd].isWhitespace()) nameEnd--
+        val nameEnd = skipWhitespaceBack(text, open - 1)
         val name = identifierEndingAt(text, nameEnd)
         if (name.isEmpty()) return emptyList()
 
@@ -282,9 +281,7 @@ class KotlinCompletionProvider : CompletionProvider() {
             ComposeBindings.composables[name] ?: ComposeBindings.functions[name]
         } ?: return emptyList()
 
-        val named = NAMED_ARGUMENT_REGEX.findAll(text.substring(open, wordStart))
-            .map { it.groupValues[1] }
-            .toSet()
+        val named = namedArguments(text, open, wordStart)
 
         return params.split(", ")
             .filter { it.isNotEmpty() && it !in named && it.startsWith(prefix, ignoreCase = true) }
@@ -296,33 +293,6 @@ class KotlinCompletionProvider : CompletionProvider() {
                     insertText = "$it = "
                 )
             }
-    }
-
-    /**
-     * Index of the `(` of the argument list in which the word at [wordStart]
-     * starts an argument, or null when the word is not at the start of one,
-     * such as inside an argument's value or a lambda.
-     */
-    private fun argumentListStart(text: String, wordStart: Int): Int? {
-        var depth = 0
-        var argumentStart = -1
-        val limit = (wordStart - MAX_LOOK_BACK).coerceAtLeast(0)
-        for (i in wordStart - 1 downTo limit) {
-            when (text[i]) {
-                ')', ']', '}' -> depth++
-                '[', '{' -> if (depth == 0) return null else depth--
-                ',' -> if (depth == 0 && argumentStart == -1) argumentStart = i
-                '(' -> {
-                    if (depth > 0) {
-                        depth--
-                        continue
-                    }
-                    if (argumentStart == -1) argumentStart = i
-                    return i.takeIf { text.substring(argumentStart + 1, wordStart).isBlank() }
-                }
-            }
-        }
-        return null
     }
 
     /**
@@ -363,8 +333,7 @@ class KotlinCompletionProvider : CompletionProvider() {
      * resolves to the receiver its result has, when that is a known one.
      */
     private fun receiverOf(text: String, dot: Int): String? {
-        var end = dot - 1
-        while (end >= 0 && text[end].isWhitespace()) end--
+        val end = skipWhitespaceBack(text, dot - 1)
         if (end < 0) return null
 
         if (text[end] == ')') {
@@ -385,23 +354,6 @@ class KotlinCompletionProvider : CompletionProvider() {
         }
     }
 
-    private fun openingParenOf(text: String, close: Int): Int? {
-        var depth = 0
-        for (i in close downTo 0) {
-            when (text[i]) {
-                ')' -> depth++
-                '(' -> if (--depth == 0) return i
-            }
-        }
-        return null
-    }
-
-    private fun identifierEndingAt(text: String, end: Int): String {
-        var start = end
-        while (start >= 0 && (text[start].isLetterOrDigit() || text[start] == '_')) start--
-        return text.substring(start + 1, end + 1)
-    }
-
     private fun Map<String, String>.matching(prefix: String) =
         filterKeys { it.startsWith(prefix, ignoreCase = true) }
 
@@ -417,11 +369,5 @@ class KotlinCompletionProvider : CompletionProvider() {
         /** Ends a word. `.` and `@` are kept, so members and annotations are seen. */
         const val SEPARATORS = " \n\t(){}[],;:\"'<>="
         const val MAX_ITEMS = 30
-
-        /** How far back to look for the call around the cursor. */
-        const val MAX_LOOK_BACK = 2000
-
-        /** Matches a named argument, such as `modifier =` in `Column(modifier = …`. */
-        val NAMED_ARGUMENT_REGEX = Regex("""[(,]\s*(\w+)\s*=(?!=)""")
     }
 }

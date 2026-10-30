@@ -14,7 +14,7 @@ A Compose Multiplatform code-editor component for Kotlin. Embed a fast, configur
 
 Use Nemo Code Editor wherever your Compose app needs to display or edit source code:
 
-- Syntax-highlighted Kotlin Multiplatform and Python editors with formatting, autocomplete, and error detection. Kotlin autocomplete covers Compose annotations, composables, modifiers, and Material icons.
+- Syntax-highlighted Kotlin Multiplatform and Python editors with formatting, autocomplete, and error detection. Kotlin autocomplete covers Compose annotations, composables, modifiers, and Material icons. MicroPython autocomplete covers hardware modules, classes, call parameters, and snippets.
 - Highlighting for Java, JavaScript, TypeScript, C/C++, Go, Rust, Swift, Dart, and PHP, and for HTML, CSS, JSON, Markdown, SQL, and more using the generic language fallback.
 - Read-only code viewers, configuration editors, playgrounds, and custom IDE-like experiences.
 - Configurable themes, font size, tabs or spaces, line numbers, indentation guides, auto-indent, and autocomplete.
