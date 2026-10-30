@@ -20,68 +20,208 @@ class KotlinFormatter : CodeFormatter() {
         return result
     }
 
+    /**
+     * Indents each line by the brackets left open before it. A bracket opened
+     * anywhere on a line, not only at its end, indents the lines after it by
+     * one level relative to that line, so `Column(modifier = m,` indents the
+     * next argument and the `) {` that closes it. Brackets in strings and
+     * comments are ignored, a line starting with `.`, `?.`, `?:`, `&&` or `||`
+     * continues the previous one, and text inside a multi-line string is kept
+     * as written.
+     */
     override fun formatCode(code: String, tabSize: Int, useTabs: Boolean): String {
-        val lines = code.lines()
         val formatted = mutableListOf<String>()
-        var indentLevel = 0
         val indent = if (useTabs) "\t" else " ".repeat(tabSize)
-        var inMultiLineComment = false
+        // The indent level of the line each unclosed bracket was opened on
+        val openers = ArrayDeque<Int>()
+        var state = ScanState.CODE
 
-        for (i in lines.indices) {
-            var line = lines[i].trim()
+        for (rawLine in code.lines()) {
+            val startState = state
+            val (brackets, endState) = scanBrackets(rawLine, startState)
+            state = endState
+            val base = openers.lastOrNull()?.plus(1) ?: 0
 
+            // The text of a multi-line string is kept exactly as written
+            if (startState == ScanState.RAW_STRING) {
+                formatted.add(rawLine)
+                applyBrackets(brackets, openers, base)
+                continue
+            }
+
+            val line = rawLine.trim()
             if (line.isEmpty()) {
                 formatted.add("")
                 continue
             }
 
-            // Check for multi-line comment start/end
-            if (line.contains("/*")) {
-                inMultiLineComment = true
+            val level = when {
+                startState == ScanState.BLOCK_COMMENT -> base
+                line.first() in CLOSING_BRACKETS -> openers.lastOrNull() ?: 0
+                CONTINUATIONS.any { line.startsWith(it) } -> base + 1
+                else -> base
             }
 
-            // Don't format lines inside multi-line comments
-            if (inMultiLineComment) {
-                formatted.add(indent.repeat(indentLevel) + line)
-                if (line.contains("*/")) {
-                    inMultiLineComment = false
-                }
-                continue
+            val text = when {
+                // Inside a comment, align the leading `*` of KDoc lines
+                startState == ScanState.BLOCK_COMMENT -> if (line.startsWith("*")) " $line" else line
+                // A comment line, or a line that opens a comment or a multi-line string
+                line.startsWith("//") || endState != ScanState.CODE -> line
+                else -> formatLine(line)
             }
+            formatted.add(indent.repeat(level) + text)
 
-            // Don't format single-line comments - keep them as is with proper indent
-            if (line.startsWith("//")) {
-                formatted.add(indent.repeat(indentLevel) + line)
-                continue
-            }
-
-            // Decrease indent for closing braces
-            if (line.startsWith("}") || line.startsWith(")") || line.startsWith("]")) {
-                indentLevel = maxOf(0, indentLevel - 1)
-            }
-
-            // Format the line (but not comments)
-            line = formatLine(line)
-
-            // Add indentation
-            val indentedLine = indent.repeat(indentLevel) + line
-            formatted.add(indentedLine)
-
-            // Increase indent after opening braces
-            if (line.endsWith("{") || line.endsWith("(") || line.endsWith("[")) {
-                indentLevel++
-            }
-
-            // Special case: if line has both { and }, don't change indent
-            val openCount = line.count { it == '{' }
-            val closeCount = line.count { it == '}' }
-            if (openCount > 0 && closeCount > 0 && openCount == closeCount) {
-                indentLevel -= closeCount
-            }
+            applyBrackets(brackets, openers, level)
         }
 
         return formatted.joinToString("\n")
     }
+
+    /**
+     * Opens and closes [brackets] in order. Brackets opened on a line take the
+     * level of that line, or the lower level of a bracket the line closed first,
+     * so the lambda in `foo(a,\n    b) {` indents relative to `foo`.
+     */
+    private fun applyBrackets(brackets: List<Char>, openers: ArrayDeque<Int>, level: Int) {
+        var anchor = level
+        for (bracket in brackets) {
+            if (bracket in CLOSING_BRACKETS) {
+                openers.removeLastOrNull()?.let { anchor = minOf(anchor, it) }
+            } else {
+                openers.addLast(anchor)
+            }
+        }
+    }
+
+    /** Where a line starts or ends, as far as strings and comments go. */
+    private enum class ScanState { CODE, BLOCK_COMMENT, RAW_STRING }
+
+    /**
+     * The brackets of [line] that are outside strings, characters and comments,
+     * in order, and the state the line ends in, given that it starts in [start].
+     */
+    private fun scanBrackets(line: String, start: ScanState): Pair<List<Char>, ScanState> {
+        val brackets = mutableListOf<Char>()
+        var state = start
+        var i = 0
+        while (i < line.length) {
+            when (state) {
+                ScanState.BLOCK_COMMENT -> {
+                    val end = line.indexOf("*/", i)
+                    if (end == -1) return brackets to state
+                    i = end + 2
+                    state = ScanState.CODE
+                }
+
+                ScanState.RAW_STRING -> {
+                    val end = line.indexOf("\"\"\"", i)
+                    if (end == -1) return brackets to state
+                    i = end + 3
+                    // A raw string may end with extra quotes, as in """a""""
+                    while (i < line.length && line[i] == '"') i++
+                    state = ScanState.CODE
+                }
+
+                ScanState.CODE -> when {
+                    line.startsWith("//", i) -> return brackets to state
+                    line.startsWith("/*", i) -> {
+                        state = ScanState.BLOCK_COMMENT
+                        i += 2
+                    }
+
+                    line.startsWith("\"\"\"", i) -> {
+                        state = ScanState.RAW_STRING
+                        i += 3
+                    }
+
+                    line[i] == '"' || line[i] == '\'' -> i = literalEnd(line, i)
+                    else -> {
+                        if (line[i] in OPENING_BRACKETS || line[i] in CLOSING_BRACKETS) {
+                            brackets.add(line[i])
+                        }
+                        i++
+                    }
+                }
+            }
+        }
+        return brackets to state
+    }
+
+    /**
+     * Index just past the string or character literal that starts at [start],
+     * or the end of [line] when it is not closed. Templates such as
+     * `"${map["key"]}"` are skipped as a whole.
+     */
+    private fun literalEnd(line: String, start: Int): Int {
+        val quote = line[start]
+        var i = start + 1
+        while (i < line.length) {
+            when {
+                line[i] == '\\' -> i += 2
+                line[i] == quote -> return i + 1
+                quote == '"' && line.startsWith("\${", i) -> i = templateEnd(line, i + 2)
+                else -> i++
+            }
+        }
+        return line.length
+    }
+
+    /** Index just past the `}` that closes the template opened before [start]. */
+    private fun templateEnd(line: String, start: Int): Int {
+        var depth = 1
+        var i = start
+        while (i < line.length && depth > 0) {
+            when (line[i]) {
+                '{' -> depth++
+                '}' -> depth--
+                '"', '\'' -> {
+                    i = literalEnd(line, i)
+                    continue
+                }
+            }
+            i++
+        }
+        return i
+    }
+
+    /**
+     * [line] with its string and character literals and inline comments
+     * replaced by numbered placeholders such as `"0"`, the trailing `//`
+     * comment, and the replaced text, which [restoreLiterals] puts back.
+     */
+    private fun maskLiterals(line: String): Triple<String, String, List<String>> {
+        val code = StringBuilder()
+        val literals = mutableListOf<String>()
+        var i = 0
+        while (i < line.length) {
+            val end = when {
+                line.startsWith("//", i) -> return Triple(code.toString(), line.substring(i), literals)
+                line.startsWith("/*", i) ->
+                    line.indexOf("*/", i + 2).let { if (it == -1) line.length else it + 2 }
+
+                line.startsWith("\"\"\"", i) ->
+                    line.indexOf("\"\"\"", i + 3).let { if (it == -1) line.length else it + 3 }
+
+                line[i] == '"' || line[i] == '\'' -> literalEnd(line, i)
+                else -> {
+                    code.append(line[i])
+                    i++
+                    continue
+                }
+            }
+            val quote = if (line[i] == '\'') '\'' else '"'
+            code.append(quote).append(literals.size).append(quote)
+            literals.add(line.substring(i, end))
+            i = end
+        }
+        return Triple(code.toString(), "", literals)
+    }
+
+    /** Puts back the text that [maskLiterals] replaced with placeholders. */
+    private fun restoreLiterals(code: String, literals: List<String>): String =
+        PLACEHOLDER_REGEX.replace(code) { match ->
+            literals.getOrNull(match.groupValues[2].toInt()) ?: match.value
+        }
 
     override fun formatImports(code: String): String {
         val lines = code.lines().toMutableList()
@@ -145,35 +285,27 @@ class KotlinFormatter : CodeFormatter() {
         return if (code.endsWith("\n")) code else "$code\n"
     }
 
+    /**
+     * Fixes the spacing of [line]. Strings, characters and comments are kept
+     * as written, so `"a=b"` stays as it is.
+     */
     override fun formatLine(line: String): String {
-        // Don't format if line contains a comment
-        if (line.contains("//")) {
-            // Format code before comment, keep comment as is
-            val commentIndex = line.indexOf("//")
-            val codePart = line.substring(0, commentIndex)
-            val commentPart = line.substring(commentIndex)
+        val (code, comment, literals) = maskLiterals(line)
 
-            var formattedCode = codePart
-            formattedCode = addSpaceAfterKeywords(formattedCode)
-            formattedCode = addSpacesAroundOperators(formattedCode)
-            formattedCode = addSpaceAfterCommas(formattedCode)
-            formattedCode = addSpaceBeforeOpeningBrace(formattedCode)
-            formattedCode = removeExtraSpaces(formattedCode)
-            formattedCode = fixFunctionCalls(formattedCode)
-
-            return formattedCode.trimEnd() + " " + commentPart
-        }
-
-        var result = line
-
+        var result = code
         result = addSpaceAfterKeywords(result)
         result = addSpacesAroundOperators(result)
         result = addSpaceAfterCommas(result)
         result = addSpaceBeforeOpeningBrace(result)
         result = removeExtraSpaces(result)
         result = fixFunctionCalls(result)
+        result = restoreLiterals(result, literals).trimEnd()
 
-        return result
+        return when {
+            comment.isEmpty() -> result
+            result.isEmpty() -> comment
+            else -> "$result $comment"
+        }
     }
 
     override fun addSpaceAfterKeywords(line: String): String {
@@ -286,5 +418,16 @@ class KotlinFormatter : CodeFormatter() {
         result = result.replace(Regex("([a-zA-Z0-9_])\\s+\\("), "$1(")
         result = result.replace(Regex("\\)(\\{)"), ") $1")
         return result
+    }
+
+    private companion object {
+        const val OPENING_BRACKETS = "{(["
+        const val CLOSING_BRACKETS = "})]"
+
+        /** Starts of a line that continues the expression on the line before. */
+        val CONTINUATIONS = listOf(".", "?.", "?:", "&&", "||")
+
+        /** Matches a placeholder left by [maskLiterals], such as `"0"`. */
+        val PLACEHOLDER_REGEX = Regex("""(["'])(\d+)\1""")
     }
 }
