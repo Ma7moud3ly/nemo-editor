@@ -70,11 +70,9 @@ fun NemoCodeField(
     val highlighter = remember(theme, tokenizer) {
         SyntaxHighlighter(tokenizer, errorDetector = null, theme = theme)
     }
-    val highlightedCode = rememberHighlightedCode(
-        code = state.code,
-        highlighter = highlighter,
-        plainColor = Color(theme.foreground)
-    )
+    val highlightedCode = remember(state.code, theme) {
+        highlighter.highlight(state.code)
+    }
 
     // A single line never breaks, so it has no indentation to carry over.
     val autoIndentHandler = remember(language, settings, singleLine) {

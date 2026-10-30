@@ -25,9 +25,6 @@ import androidx.compose.ui.unit.dp
  * @param color color of an ordinary guide.
  * @param activeColor color of the guide the caret sits inside.
  * @param strokeWidth thickness of a guide.
- * @param visibleLines the zero-based lines on screen, or `null` for all.
- *   Guides outside them are skipped, so drawing costs the same however long
- *   the document is.
  */
 fun Modifier.indentGuides(
     guides: () -> IndentGuides?,
@@ -35,8 +32,7 @@ fun Modifier.indentGuides(
     textLayout: () -> TextLayoutResult?,
     color: Color,
     activeColor: Color,
-    strokeWidth: Dp = 1.dp,
-    visibleLines: () -> IntRange? = { null }
+    strokeWidth: Dp = 1.dp
 ): Modifier = drawBehind {
     val model = guides() ?: return@drawBehind
     if (model.isEmpty) return@drawBehind
@@ -48,12 +44,8 @@ fun Modifier.indentGuides(
     val lastLine = layout.lineCount - 1
     val textLength = layout.layoutInput.text.length
     val active = model.activeGuide(activeLine())
-    val visible = visibleLines()
 
     model.guides.forEach { guide ->
-        if (visible != null && (guide.endLine < visible.first || guide.startLine > visible.last)) {
-            return@forEach
-        }
         val top = layout.getLineTop(guide.startLine.coerceIn(0, lastLine))
         val bottom = layout.getLineBottom(guide.endLine.coerceIn(0, lastLine))
         if (bottom <= top) return@forEach

@@ -5,7 +5,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
 class HighlightTransformationTest {
@@ -22,9 +21,8 @@ class HighlightTransformationTest {
     }
 
     @Test
-    fun movesTheColorsOntoANewerText() {
-        val transformed = transformation.filter(AnnotatedString("  val x"))
-        assertEquals("  val x", transformed.text.text)
-        assertEquals(listOf(AnnotatedString.Range(red, 2, 5)), transformed.text.spanStyles)
+    fun showsAnotherTextWithoutColors() {
+        val other = AnnotatedString("  val x")
+        assertSame(other, transformation.filter(other).text)
     }
 }

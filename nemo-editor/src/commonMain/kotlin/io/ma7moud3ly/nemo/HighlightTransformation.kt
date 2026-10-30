@@ -18,12 +18,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 internal class HighlightTransformation(private val highlighted: AnnotatedString) : VisualTransformation {
 
     override fun filter(text: AnnotatedString): TransformedText {
-        val styled = when {
-            text.text == highlighted.text -> highlighted
-            // The field may hold a newer text than the highlight; move the
-            // colors onto it so they still match
-            else -> shiftStyles(highlighted, text.text)
-        }
+        // Colors that belong to another text would land on the wrong letters
+        val styled = if (text.text == highlighted.text) highlighted else text
         return TransformedText(styled, OffsetMapping.Identity)
     }
 }

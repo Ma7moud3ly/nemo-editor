@@ -113,9 +113,7 @@ fun AutocompletePopup(
         val lastChar = code.getOrNull(cursorPos - 1)
 
         // Show autocomplete if typing letters, digits, or after dot
-        if (code.length <= HUGE_DOCUMENT &&
-            lastChar != null && (lastChar.isLetterOrDigit() || lastChar == '.')
-        ) {
+        if (lastChar != null && (lastChar.isLetterOrDigit() || lastChar == '.')) {
             coroutineScope.launch {
                 val provider = completionProvider ?: return@launch
                 // Providers scan the whole text, so keep that off the main thread
