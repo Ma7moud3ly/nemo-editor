@@ -7,9 +7,11 @@ abstract class CodeFormatter {
     protected abstract fun removeTrailingWhitespace(code: String): String
     protected abstract fun ensureNewlineAtEnd(code: String): String
     protected abstract fun formatLine(line: String): String
-    protected abstract fun addSpaceAfterKeywords(line: String): String
-    protected abstract fun addSpacesAroundOperators(line: String): String
-    protected abstract fun addSpaceAfterCommas(line: String): String
-    protected abstract fun removeExtraSpaces(line: String): String
-    protected abstract fun fixFunctionCalls(line: String): String
+
+    // Spacing steps a formatLine may use. Each returns the line unchanged by default.
+    protected open fun addSpaceAfterKeywords(line: String): String = line
+    protected open fun addSpacesAroundOperators(line: String): String = line
+    protected open fun addSpaceAfterCommas(line: String): String = line
+    protected open fun removeExtraSpaces(line: String): String = line
+    protected open fun fixFunctionCalls(line: String): String = line
 }
