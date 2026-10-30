@@ -14,6 +14,7 @@ import io.ma7moud3ly.nemo.InternalNemoApi
 import io.ma7moud3ly.nemo.managers.UndoRedoManager
 import io.ma7moud3ly.nemo.managers.AutoIndentHandler
 import io.ma7moud3ly.nemo.managers.diffText
+import io.ma7moud3ly.nemo.managers.normalizeLineEndings
 
 /**
  * State holder for the code editor with integrated undo/redo and text management
@@ -34,16 +35,24 @@ class CodeState(
     isDirty: Boolean = false,
     initialCursorPosition: Int = initialCode.length
 ) {
-    /**
-     * Code editor text field value
-     */
-    @InternalNemoApi
-    var value by mutableStateOf(
-        TextFieldValue(
-            text = initialCode,
-            selection = TextRange(initialCursorPosition)
+    private var _value by mutableStateOf(
+        normalizeLineEndings(
+            TextFieldValue(
+                text = initialCode,
+                selection = TextRange(initialCursorPosition)
+            )
         )
     )
+
+    /**
+     * Code editor text field value. Line endings are always stored as `\n`.
+     */
+    @InternalNemoApi
+    var value: TextFieldValue
+        get() = _value
+        set(newValue) {
+            _value = normalizeLineEndings(newValue)
+        }
 
 
     /**
@@ -55,7 +64,7 @@ class CodeState(
      * The text as of the last [commitChanges]. It is null while the code has
      * never been saved.
      */
-    private var savedCode: String? by mutableStateOf(if (isDirty) null else initialCode)
+    private var savedCode: String? by mutableStateOf(if (isDirty) null else code)
 
     /**
      * True when the code differs from the text of the last [commitChanges].
@@ -322,6 +331,8 @@ class CodeState(
         newValue: TextFieldValue,
         autoIndentHandler: AutoIndentHandler? = null
     ): Boolean {
+        @Suppress("NAME_SHADOWING")
+        val newValue = normalizeLineEndings(newValue)
         val oldValue = this.value
         val oldText = oldValue.text
         val newText = newValue.text

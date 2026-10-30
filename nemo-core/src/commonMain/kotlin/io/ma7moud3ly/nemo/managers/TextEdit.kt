@@ -1,5 +1,8 @@
 package io.ma7moud3ly.nemo.managers
 
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+
 /**
  * The single contiguous change between two revisions of a text.
  *
@@ -61,4 +64,40 @@ internal fun diffText(old: String, new: String): TextEdit? {
     }
 
     return TextEdit(start = start, removed = removed, inserted = inserted)
+}
+
+/**
+ * Returns [value] with every `\r\n` and lone `\r` turned into `\n`, keeping the
+ * selection and composition on the same characters.
+ */
+internal fun normalizeLineEndings(value: TextFieldValue): TextFieldValue {
+    val text = value.text
+    if ('\r' !in text) return value
+
+    val normalized = StringBuilder(text.length)
+    // Maps each offset in the old text to its offset in the normalized one.
+    val offsets = IntArray(text.length + 1)
+    var i = 0
+    while (i < text.length) {
+        offsets[i] = normalized.length
+        if (text[i] == '\r' && i + 1 < text.length && text[i + 1] == '\n') {
+            // The '\r' is dropped, so it maps onto the '\n' that follows.
+            i++
+            continue
+        }
+        normalized.append(if (text[i] == '\r') '\n' else text[i])
+        i++
+    }
+    offsets[text.length] = normalized.length
+
+    fun TextRange.mapped() = TextRange(
+        offsets[start.coerceIn(0, text.length)],
+        offsets[end.coerceIn(0, text.length)]
+    )
+
+    return TextFieldValue(
+        text = normalized.toString(),
+        selection = value.selection.mapped(),
+        composition = value.composition?.mapped()
+    )
 }
