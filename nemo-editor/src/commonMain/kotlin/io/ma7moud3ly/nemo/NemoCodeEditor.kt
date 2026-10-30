@@ -3,26 +3,21 @@ package io.ma7moud3ly.nemo
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -54,9 +48,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ma7moud3ly.nemo.lsp.completion.AutocompleteState
 import io.ma7moud3ly.nemo.managers.AutoIndentHandlerFactory
@@ -65,7 +57,6 @@ import io.ma7moud3ly.nemo.model.EditorSettings
 import io.ma7moud3ly.nemo.model.EditorTheme
 import io.ma7moud3ly.nemo.syntax.analysis.ErrorDetectorFactory
 import io.ma7moud3ly.nemo.syntax.highlighting.SyntaxHighlighter
-import io.ma7moud3ly.nemo.syntax.indent.IndentGuideCalculator
 import io.ma7moud3ly.nemo.syntax.indent.IndentGuides
 import io.ma7moud3ly.nemo.syntax.indent.indentGuides
 import io.ma7moud3ly.nemo.syntax.tokenizer.TokenizerFactory
@@ -99,17 +90,20 @@ fun NemoCodeEditor(
         SyntaxHighlighter(tokenizer, errorDetector, theme)
     }
 
-    val highlightedCode = remember(state.code, theme) {
-        highlighter.highlight(state.code)
-    }
+    // Highlighted right away for a small document, off the main thread for a large one
+    val highlightedCode = rememberHighlightedCode(
+        code = state.code,
+        highlighter = highlighter,
+        plainColor = Color(theme.foreground)
+    )
 
     // Indentation guides - recomputed only when the text or tab size changes,
     // the active guide is resolved later during the draw phase.
-    val tabSize = settings.tabSizeState.value
-    val showGuides = settings.showIndentGuidesState.value
-    val indentGuides = remember(state.code, tabSize, showGuides) {
-        if (showGuides) IndentGuideCalculator.compute(state.code, tabSize) else null
-    }
+    val indentGuides = rememberIndentGuides(
+        code = state.code,
+        tabSize = settings.tabSizeState.value,
+        enabled = settings.showIndentGuidesState.value
+    )
 
     // Track scroll state for autocomplete positioning
     val scrollState = rememberScrollState()
@@ -242,10 +236,6 @@ private fun EditorContent(
     // it, and the autocomplete popup reads the caret rectangle.
     var codeTextLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
 
-    // Layout of the line numbers, used to tell which one was clicked and to
-    // draw the highlights behind them.
-    var lineNumbersLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-
     // Color of a highlighted line that has no color of its own.
     val highlightColor = Color(theme.syntax.keyword).copy(alpha = 0.2f)
 
@@ -258,6 +248,14 @@ private fun EditorContent(
         contentPadding.calculateLeftPadding(layoutDirection).toPx()
     }
     val textTop = with(LocalDensity.current) { contentPadding.calculateTopPadding().toPx() }
+
+    // The lines on screen, read in the draw phase so scrolling only repaints
+    val visibleLines: () -> IntRange? = {
+        codeTextLayout?.let { layout ->
+            val top = scrollState.value - textTop
+            layout.getLineForVerticalPosition(top)..layout.getLineForVerticalPosition(top + codeAreaSize.height)
+        }
+    }
 
     // Caret bounds in code-area coordinates: read off the real text layout, then
     // shifted by the scroll offsets and the padding the text sits behind. Taking
@@ -298,54 +296,23 @@ private fun EditorContent(
     }
 
     Row(modifier = Modifier.fillMaxSize()) {
-        // Line numbers
+        // Line numbers. Only the visible ones are drawn, at the lines of the code
+        // layout, and a click on one toggles that line's highlight.
         if (showLineNumbers) {
-            Surface(
-                color = Color(theme.gutter),
-                modifier = Modifier
-                    .width(IntrinsicSize.Min)
-                    .fillMaxHeight()
-                    .background(Color(theme.gutter))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .verticalScroll(scrollState, enabled = false)
-                        .horizontalScroll(horizontalScrollState, enabled = false)
-                        .padding(
-                            top = contentPadding.calculateTopPadding(),
-                            bottom = contentPadding.calculateBottomPadding()
-                        )
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = (1..totalLines).joinToString("\n") { it.toString() },
-                        style = TextStyle(
-                            fontFamily = fontFamily,
-                            fontSize = textSize,
-                            lineHeight = lineHeight,
-                            color = Color(theme.lineNumber),
-                            textAlign = TextAlign.End
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .lineHighlights(
-                                highlights = { state.highlights },
-                                textLayout = { lineNumbersLayout },
-                                defaultColor = highlightColor
-                            )
-                            // A click on a line number toggles that line's highlight
-                            .pointerInput(state) {
-                                detectTapGestures { offset ->
-                                    val layout = lineNumbersLayout ?: return@detectTapGestures
-                                    state.toggleHighlight(layout.getLineForVerticalPosition(offset.y) + 1)
-                                }
-                            },
-                        softWrap = false,
-                        maxLines = Int.MAX_VALUE,
-                        onTextLayout = { lineNumbersLayout = it }
-                    )
-                }
-            }
+            LineNumberGutter(
+                totalLines = totalLines,
+                textLayout = { codeTextLayout },
+                scrollState = scrollState,
+                textTop = textTop,
+                currentLine = { state.currentLine },
+                highlights = { state.highlights },
+                style = codeTextStyle,
+                color = Color(theme.lineNumber),
+                activeColor = Color(theme.lineNumberActive),
+                highlightColor = highlightColor,
+                background = Color(theme.gutter),
+                onLineClick = { state.toggleHighlight(it) }
+            )
         }
 
         // Editor area. Its own bounds are the viewport the autocomplete popup
@@ -364,12 +331,19 @@ private fun EditorContent(
             )
 
             CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+                // The field draws the colored code itself, so the document is laid
+                // out once, and the caret and selection always match the glyphs.
+                val highlighting = remember(highlightedCode) {
+                    HighlightTransformation(highlightedCode)
+                }
                 BasicTextField(
                     value = code,
                     onValueChange = onValueChange,
                     readOnly = readOnly,
-                    textStyle = codeTextStyle.copy(color = Color.Transparent),
+                    textStyle = codeTextStyle.copy(color = Color(theme.foreground)),
                     cursorBrush = SolidColor(Color(theme.syntax.keyword)),
+                    visualTransformation = highlighting,
+                    onTextLayout = { codeTextLayout = it },
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(scrollState)
@@ -389,29 +363,19 @@ private fun EditorContent(
                                     activeLine = activeLine,
                                     textLayout = { codeTextLayout },
                                     color = Color(theme.lineNumber).copy(alpha = 0.30f),
-                                    activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f)
+                                    activeColor = Color(theme.lineNumberActive).copy(alpha = 0.75f),
+                                    visibleLines = visibleLines
                                 )
                         ) {
-                            if (code.text.isEmpty()) {
+                            if (code.text.isEmpty() && !readOnly) {
                                 Text(
-                                    if (readOnly) "" else "Start typing...",
+                                    "Start typing...",
                                     style = codeTextStyle.copy(
                                         color = Color(theme.lineNumber)
-                                    ),
-                                    onTextLayout = { codeTextLayout = it }
-                                )
-                            } else {
-                                Text(
-                                    text = highlightedCode,
-                                    style = codeTextStyle,
-                                    softWrap = false,
-                                    maxLines = Int.MAX_VALUE,
-                                    onTextLayout = { codeTextLayout = it }
+                                    )
                                 )
                             }
-                            Box(modifier = Modifier.alpha(1f)) {
-                                innerTextField()
-                            }
+                            innerTextField()
                         }
                     }
                 )

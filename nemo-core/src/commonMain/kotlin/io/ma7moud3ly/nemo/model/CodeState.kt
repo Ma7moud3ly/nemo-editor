@@ -100,16 +100,42 @@ class CodeState(
     /**
      * Total number of lines in the document
      */
-    val totalLines: Int by derivedStateOf {
-        code.count { it == '\n' } + 1
-    }
+    val totalLines: Int get() = lineStarts.size
+
+    /**
+     * Offset where each line starts, found once per change of the text. It is
+     * kept for the text it was found for, since moving the caret replaces
+     * [value] but keeps the same text.
+     */
+    private val lineStarts: IntArray
+        get() {
+            val text = code
+            if (text !== lineStartsText) {
+                lineStartsCache = lineStartsOf(text)
+                lineStartsText = text
+            }
+            return lineStartsCache
+        }
+    private var lineStartsText: String? = null
+    private var lineStartsCache = IntArray(1)
 
     /**
      * Current line number (1-based)
      */
     val currentLine: Int by derivedStateOf {
-        code.substring(0, cursorPosition.coerceAtMost(code.length))
-            .count { it == '\n' } + 1
+        lineIndexOf(cursorPosition.coerceIn(0, code.length)) + 1
+    }
+
+    /** The zero-based line that holds [offset], found by a binary search of [lineStarts]. */
+    private fun lineIndexOf(offset: Int): Int {
+        val starts = lineStarts
+        var low = 0
+        var high = starts.lastIndex
+        while (low < high) {
+            val mid = (low + high + 1) / 2
+            if (starts[mid] <= offset) low = mid else high = mid - 1
+        }
+        return low
     }
 
     /**
@@ -396,6 +422,18 @@ class CodeState(
     fun recordAction(action: FindReplaceAction) {
         undoRedoManager.recordAction(action)
     }
+}
+
+/** The offset where each line of [text] starts. The first line starts at 0. */
+private fun lineStartsOf(text: String): IntArray {
+    var count = 1
+    for (c in text) if (c == '\n') count++
+    val starts = IntArray(count)
+    var line = 1
+    for (i in text.indices) {
+        if (text[i] == '\n') starts[line++] = i + 1
+    }
+    return starts
 }
 
 /**
