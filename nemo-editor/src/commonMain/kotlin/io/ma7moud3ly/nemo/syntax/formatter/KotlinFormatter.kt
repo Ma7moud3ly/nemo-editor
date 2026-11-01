@@ -317,7 +317,7 @@ class KotlinFormatter : CodeFormatter() {
 
         var result = line
         for (keyword in keywords) {
-            result = result.replace(Regex("\\b$keyword([a-zA-Z0-9_(])")) { match ->
+            result = result.replace(Regex("\\b$keyword(\\()")) { match ->
                 "$keyword ${match.groupValues[1]}"
             }
         }
