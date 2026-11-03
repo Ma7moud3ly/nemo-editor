@@ -119,4 +119,45 @@ class KotlinFormatterTest {
         val code = "val s = \"\"\"\n  keep {\n\"\"\"\nval t = 1"
         assertEquals("$code\n", formatter.format(code))
     }
+
+    @Test
+    fun composeIdentifiersStartingWithKeywordsAreKept() {
+        val code = """
+            val foreground = Color.White
+            stars.forEach {
+                drawStar(it, foreground)
+            }
+            """
+        assertEquals(expected(code), format(code))
+    }
+
+    @Test
+    fun keywordPrefixesInIdentifiersAreNotSplit() {
+        val code = """
+            val double = 1.0
+            val returnValue = double
+            val for2 = 2
+            val for_each = for2
+            """
+        assertEquals(expected(code), format(code))
+    }
+
+    @Test
+    fun controlFlowKeywordsStillFormat() {
+        val code = """
+            if(visible){
+            for(star in stars){
+            drawStar(star)
+            }
+            }
+            """
+        val formatted = """
+            if(visible) {
+                for(star in stars) {
+                    drawStar(star)
+                }
+            }
+            """
+        assertEquals(expected(formatted), format(code))
+    }
 }
