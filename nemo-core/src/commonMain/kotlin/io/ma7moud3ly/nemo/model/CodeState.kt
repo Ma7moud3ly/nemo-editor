@@ -321,7 +321,8 @@ class CodeState(
         val end = maxOf(current.selection.start, current.selection.end)
             .coerceIn(start, text.length)
 
-        val inserted = "\n" + autoIndentHandler?.indentForLineBreakAt(text, start).orEmpty()
+        val (inserted, caretInInserted) =
+            autoIndentHandler?.lineBreakAt(text, start, end) ?: ("\n" to 1)
 
         if (end > start) {
             undoRedoManager.recordAction(
@@ -330,7 +331,7 @@ class CodeState(
         }
         undoRedoManager.recordAction(FindReplaceAction.Insert(start, inserted))
 
-        val caret = start + inserted.length
+        val caret = start + caretInInserted
         lineBreakJustHandled = true
         updateCodeValue(
             TextFieldValue(
