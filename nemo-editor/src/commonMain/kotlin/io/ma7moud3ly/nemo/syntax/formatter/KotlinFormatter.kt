@@ -324,73 +324,174 @@ class KotlinFormatter : CodeFormatter() {
         return result
     }
 
+    /**
+     * Spaces the operators of [line] in one pass, reading each operator whole,
+     * so `==` is never split into `= =`.
+     *
+     * Assignments, comparisons, `&&`, `||`, `->` and `?:` get one space on each
+     * side. `+ - * / %` are spaced only between two operands, so signs (`-x`,
+     * `return -1`), spread (`*args`), `import a.*` and exponents (`1e-5`) stay
+     * as they are. `..`, `..<` and `?.` lose their spaces. Angle brackets of a
+     * generic, such as `List<Int>`, are left as written.
+     */
     override fun addSpacesAroundOperators(line: String): String {
-        var result = line
+        val generic = genericAngleBrackets(line)
+        val result = StringBuilder()
+        var i = 0
+        while (i < line.length) {
+            val op = if (i in generic) null else OPERATORS.firstOrNull { line.startsWith(it, i) }
+            if (op == null) {
+                result.append(line[i])
+                i++
+                continue
+            }
 
-        // Assignment operators
-        val assignmentOps = listOf("=", "+=", "-=", "*=", "/=", "%=")
-        for (op in assignmentOps) {
-            result = result.replace(Regex("\\s*${Regex.escape(op)}\\s*")) { " $op " }
-        }
+            val spaced = when (op) {
+                in SPACED_OPERATORS -> true
+                "+", "-", "*", "/", "%" -> isBinary(line, i, op)
+                else -> false
+            }
+            when {
+                spaced -> {
+                    trimEndSpaces(result)
+                    if (result.isNotEmpty()) result.append(' ')
+                    result.append(op)
+                    i = skipSpaces(line, i + op.length)
+                    if (i < line.length) result.append(' ')
+                }
 
-        // Comparison operators (but not generics)
-        // Handle == and != first
-        result = result.replace(Regex("\\s*==\\s*"), " == ")
-        result = result.replace(Regex("\\s*!=\\s*"), " != ")
+                op in TIGHT_OPERATORS -> {
+                    trimEndSpaces(result)
+                    result.append(op)
+                    i = skipSpaces(line, i + op.length)
+                }
 
-        // Handle <= and >= (not generics)
-        result = result.replace(Regex("([^<>])\\s*<=\\s*"), "$1 <= ")
-        result = result.replace(Regex("([^<>])\\s*>=\\s*"), "$1 >= ")
+                op == "!!" -> {
+                    trimEndSpaces(result)
+                    result.append(op)
+                    i += op.length
+                }
 
-        // Handle < and > only in comparison context (not generics)
-        // Only add spaces if NOT part of generic type syntax
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*<\\s*([a-zA-Z0-9_])")) { match ->
-            val before = match.groupValues[1]
-            val after = match.groupValues[2]
-            // Check if this looks like a generic (uppercase letter before <)
-            if (before.last().isUpperCase() || after.first().isUpperCase()) {
-                "$before<$after" // No spaces for generics
-            } else {
-                "$before < $after" // Spaces for comparison
+                else -> {
+                    result.append(op)
+                    i += op.length
+                }
             }
         }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*>\\s*([a-zA-Z0-9_])")) { match ->
-            val before = match.groupValues[1]
-            val after = match.groupValues[2]
-            // Check if this looks like end of generic
-            if (before.last().isUpperCase() || after.first().isUpperCase()) {
-                "$before>$after" // No spaces for generics
-            } else {
-                "$before > $after" // Spaces for comparison
+        return result.toString()
+    }
+
+    /**
+     * True when the [op] at [index] of [line] sits between two operands, as in
+     * `a - b`, rather than starting one, as in `-b`, `*args` or `1e-5`.
+     */
+    private fun isBinary(line: String, index: Int, op: String): Boolean {
+        var end = index - 1
+        while (end >= 0 && line[end] == ' ') end--
+        if (end < 0) return false
+        val before = line[end]
+
+        if (before == ')') {
+            // `if (x) -1`: the parenthesis closes a condition, not an operand
+            val open = openingParenthesis(line, end)
+            return open < 0 || wordBefore(line, open) !in CONDITION_KEYWORDS
+        }
+        if (before == ']' || before == '}' || before == '"' || before == '\'') return true
+        if (!before.isLetterOrDigit() && before != '_') return false
+
+        var start = end
+        while (start > 0 && (line[start - 1].isLetterOrDigit() || line[start - 1] == '_' || line[start - 1] == '.')) {
+            start--
+        }
+        val word = line.substring(start, end + 1)
+
+        // The sign of an exponent, as in 1e-5 or 2.5E+3
+        val isExponent = (op == "+" || op == "-") && end == index - 1 &&
+                (before == 'e' || before == 'E') && word.first().isDigit() &&
+                !word.startsWith("0x", ignoreCase = true) && !word.startsWith("0b", ignoreCase = true)
+        if (isExponent) return false
+
+        // `return -1`, `in -5..5`, `else -1`
+        return word.substringAfterLast('.') !in WORDS_BEFORE_OPERAND
+    }
+
+    /** Index of the `(` that the `)` at [close] closes, or -1. */
+    private fun openingParenthesis(line: String, close: Int): Int {
+        var depth = 0
+        for (i in close downTo 0) {
+            when (line[i]) {
+                ')' -> depth++
+                '(' -> if (--depth == 0) return i
             }
         }
+        return -1
+    }
 
-        // Remove spaces inside generics completely
-        result = result.replace(Regex("<\\s+"), "<")
-        result = result.replace(Regex("\\s+>"), ">")
+    /** The word just before [index], skipping spaces, or an empty string. */
+    private fun wordBefore(line: String, index: Int): String {
+        var end = index - 1
+        while (end >= 0 && line[end] == ' ') end--
+        var start = end
+        while (start >= 0 && (line[start].isLetterOrDigit() || line[start] == '_')) start--
+        return line.substring(start + 1, end + 1)
+    }
 
-        // Arithmetic operators (but not in negative numbers or function parameters)
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*\\+\\s*")) { "${it.groupValues[1]} + " }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*-(?!>)\\s*")) { "${it.groupValues[1]} - " }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*\\*\\s*")) { "${it.groupValues[1]} * " }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*/\\s*")) { "${it.groupValues[1]} / " }
-        result = result.replace(Regex("([a-zA-Z0-9_)])\\s*%\\s*")) { "${it.groupValues[1]} % " }
+    /**
+     * Indexes of the `<` and `>` of [line] that form a generic, such as in
+     * `List<Int>`, `fun <T : Any>` or `Map<String, () -> Unit>`. A pair counts
+     * only when it holds nothing but types, with no space just inside it, so a
+     * comparison such as `a < b` is never taken for one.
+     */
+    private fun genericAngleBrackets(line: String): Set<Int> {
+        val result = mutableSetOf<Int>()
+        for (start in line.indices) {
+            if (line[start] != '<' || start in result) continue
+            if (line.startsWith("<=", start) || line.getOrNull(start + 1) == ' ') continue
+            // `..<` is a range, not a generic
+            if (start >= 2 && line.startsWith("..", start - 2)) continue
 
-        // Logical operators
-        result = result.replace(Regex("\\s*&&\\s*"), " && ")
-        result = result.replace(Regex("\\s*\\|\\|\\s*"), " || ")
+            val brackets = mutableListOf(start)
+            var depth = 1
+            var parentheses = 0
+            var i = start + 1
+            while (i < line.length) {
+                val c = line[i]
+                when {
+                    c == '-' && line.getOrNull(i + 1) == '>' -> i++ // `->` of a function type
+                    c == '<' -> {
+                        depth++
+                        brackets.add(i)
+                    }
 
-        // Range operator - no spaces
-        result = result.replace(Regex("\\s*\\.\\.\\s*"), "..")
+                    c == '>' -> {
+                        if (line[i - 1] == ' ') break
+                        depth--
+                        brackets.add(i)
+                        if (depth == 0) {
+                            if (parentheses == 0) result.addAll(brackets)
+                            break
+                        }
+                    }
 
-        // Elvis operator
-        result = result.replace(Regex("\\s*\\?:\\s*"), " ?: ")
-
-        // Safe call - no spaces
-        result = result.replace(Regex("\\s*\\?\\.\\s*"), "?.")
-        result = result.replace(Regex("\\s*!!\\s*"), "!!")
-
+                    c == '(' -> parentheses++
+                    c == ')' -> if (--parentheses < 0) break
+                    c.isLetterOrDigit() || c in " _.,?*:@" -> Unit
+                    else -> break
+                }
+                i++
+            }
+        }
         return result
+    }
+
+    private fun trimEndSpaces(text: StringBuilder) {
+        while (text.isNotEmpty() && text.last() == ' ') text.setLength(text.length - 1)
+    }
+
+    private fun skipSpaces(line: String, from: Int): Int {
+        var i = from
+        while (i < line.length && line[i] == ' ') i++
+        return i
     }
 
     override fun addSpaceAfterCommas(line: String): String {
@@ -430,6 +531,31 @@ class KotlinFormatter : CodeFormatter() {
     private companion object {
         const val OPENING_BRACKETS = "{(["
         const val CLOSING_BRACKETS = "})]"
+
+        /** Operators of more than one character come first, so each is read whole. */
+        val OPERATORS = listOf(
+            "===", "!==", "..<", "?:", "?.", "!!", "::", "->", "==", "!=", "<=", ">=",
+            "&&", "||", "+=", "-=", "*=", "/=", "%=", "++", "--", "..",
+            "=", "+", "-", "*", "/", "%", "<", ">", "!"
+        )
+
+        /** Operators with one space on each side. */
+        val SPACED_OPERATORS = setOf(
+            "===", "!==", "?:", "->", "==", "!=", "<=", ">=", "&&", "||",
+            "+=", "-=", "*=", "/=", "%=", "=", "<", ">"
+        )
+
+        /** Operators with no space around them. */
+        val TIGHT_OPERATORS = setOf("..", "..<", "?.")
+
+        /** Words after which `-`, `+` and `*` start an operand, as in `return -1`. */
+        val WORDS_BEFORE_OPERAND = setOf(
+            "return", "in", "is", "else", "throw", "to", "until", "downTo", "step",
+            "and", "or", "xor"
+        )
+
+        /** Keywords whose `(…)` holds a condition, as in `if (x) -1`. */
+        val CONDITION_KEYWORDS = setOf("if", "while", "when")
 
         /** Keywords followed by a space before `(`, as in `if (x)`. `fun(x: Int)` has none. */
         val KEYWORDS_BEFORE_PARENTHESIS = setOf(
