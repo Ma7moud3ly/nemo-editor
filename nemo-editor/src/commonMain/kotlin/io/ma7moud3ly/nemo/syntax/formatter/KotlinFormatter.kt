@@ -413,9 +413,16 @@ class KotlinFormatter : CodeFormatter() {
         return result
     }
 
+    /**
+     * Removes the space between a function and its `(`, as in `foo (x)`, but
+     * keeps it after a keyword, as in `if (x)` or `val (a, b) = pair`.
+     */
     override fun fixFunctionCalls(line: String): String {
         var result = line
-        result = result.replace(Regex("([a-zA-Z0-9_])\\s+\\("), "$1(")
+        result = result.replace(Regex("(\\w+)\\s+\\(")) { match ->
+            val word = match.groupValues[1]
+            if (word in KEYWORDS_BEFORE_PARENTHESIS) "$word (" else "$word("
+        }
         result = result.replace(Regex("\\)(\\{)"), ") $1")
         return result
     }
@@ -423,6 +430,12 @@ class KotlinFormatter : CodeFormatter() {
     private companion object {
         const val OPENING_BRACKETS = "{(["
         const val CLOSING_BRACKETS = "})]"
+
+        /** Keywords followed by a space before `(`, as in `if (x)`. `fun(x: Int)` has none. */
+        val KEYWORDS_BEFORE_PARENTHESIS = setOf(
+            "if", "else", "when", "for", "while", "do", "return", "val", "var",
+            "try", "catch", "finally", "throw"
+        )
 
         /** Starts of a line that continues the expression on the line before. */
         val CONTINUATIONS = listOf(".", "?.", "?:", "&&", "||")

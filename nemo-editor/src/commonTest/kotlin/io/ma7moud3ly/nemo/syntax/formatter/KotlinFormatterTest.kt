@@ -152,11 +152,30 @@ class KotlinFormatterTest {
             }
             """
         val formatted = """
-            if(visible) {
-                for(star in stars) {
+            if (visible) {
+                for (star in stars) {
                     drawStar(star)
                 }
             }
+            """
+        assertEquals(expected(formatted), format(code))
+    }
+
+    @Test
+    fun callsHaveNoSpaceBeforeTheirParenthesis() {
+        val code = """
+            val (a, b) = pair
+            val f = fun(x: Int) = x
+            when(x) {
+            }
+            drawStar (star)
+            """
+        val formatted = """
+            val (a, b) = pair
+            val f = fun(x: Int) = x
+            when (x) {
+            }
+            drawStar(star)
             """
         assertEquals(expected(formatted), format(code))
     }
