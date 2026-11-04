@@ -152,12 +152,72 @@ class KotlinFormatterTest {
             }
             """
         val formatted = """
-            if(visible) {
-                for(star in stars) {
+            if (visible) {
+                for (star in stars) {
                     drawStar(star)
                 }
             }
             """
         assertEquals(expected(formatted), format(code))
+    }
+
+    @Test
+    fun callsHaveNoSpaceBeforeTheirParenthesis() {
+        val code = """
+            val (a, b) = pair
+            val f = fun(x: Int) = x
+            when(x) {
+            }
+            drawStar (star)
+            """
+        val formatted = """
+            val (a, b) = pair
+            val f = fun(x: Int) = x
+            when (x) {
+            }
+            drawStar(star)
+            """
+        assertEquals(expected(formatted), format(code))
+    }
+
+    @Test
+    fun operatorsAreReadWhole() {
+        val code = """
+            val radius = if (i % 2==0) cell/2.5f else cell / 5.5f
+            count+=1
+            val same = a!=b && c<=d || e>=f
+            val less = a<b
+            val name = user?.name ?: "none"
+            """
+        val formatted = """
+            val radius = if (i % 2 == 0) cell / 2.5f else cell / 5.5f
+            count += 1
+            val same = a != b && c <= d || e >= f
+            val less = a < b
+            val name = user?.name ?: "none"
+            """
+        assertEquals(expected(formatted), format(code))
+    }
+
+    @Test
+    fun signsAndExponentsStayAttached() {
+        val code = """
+            val angle = -PI / 2 + i * PI / 5
+            val small = 1e-5
+            val sign = if (x < 0) -1 else 1
+            foo(*args)
+            """
+        assertEquals(expected(code), format(code))
+    }
+
+    @Test
+    fun genericsAreKept() {
+        val code = """
+            val map: Map<String, List<Int>> = mapOf()
+            fun <T : Comparable<T>> sort(list: List<T>) {}
+            val all = listOf<Int>()
+            val onClick: Lazy<() -> Unit> = lazy {}
+            """
+        assertEquals(expected(code), format(code))
     }
 }

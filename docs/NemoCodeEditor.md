@@ -28,6 +28,12 @@ Replace `x.x.x` with the latest version on [Maven Central](https://central.sonat
 | `nemo-search` | `FindReplaceBar`, `FindReplaceDialog` and `FindAndReplaceManager` |
 | `nemo-tabs` | `TabsManager`, `NemoTab`, `TabFile` and `NemoTabs` |
 
+To read the library's version at run time, use `NemoEditorInfo`.
+
+```kotlin
+Text("Nemo Code Editor ${NemoEditorInfo.VERSION}")
+```
+
 ---
 
 ## 🎯 Core API

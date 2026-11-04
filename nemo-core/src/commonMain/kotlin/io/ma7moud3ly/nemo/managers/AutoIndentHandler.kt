@@ -32,15 +32,14 @@ class AutoIndentHandler(
         if (edit.removed.isNotEmpty()) return null
         if (edit.inserted != "\n" && edit.inserted != "\r\n") return null
 
-        val lineBreakEnd = edit.insertionEnd
-        val newIndent = indentForLineBreakAt(newValue.text, edit.start)
-        if (newIndent.isEmpty()) return null
+        // The line break this Enter should have made, in the text before it
+        val text = oldValue.text
+        val (inserted, caret) = lineBreakAt(text, edit.start)
+        if (inserted == "\n") return null
 
         return TextFieldValue(
-            text = newValue.text.substring(0, lineBreakEnd) +
-                    newIndent +
-                    newValue.text.substring(lineBreakEnd),
-            selection = TextRange(lineBreakEnd + newIndent.length)
+            text = text.substring(0, edit.start) + inserted + text.substring(edit.start),
+            selection = TextRange(edit.start + caret)
         )
     }
 
@@ -60,6 +59,34 @@ class AutoIndentHandler(
         )
     }
 
+    /**
+     * The text a line break replacing [start] to [end] of [text] inserts, and
+     * where the caret goes in it.
+     *
+     * It is a newline and the indentation of the new line. When the caret sits
+     * between a bracket and the one that closes it, as in `Column {|}`, a
+     * second line break moves the closing bracket to its own line at the
+     * indentation of the line being left, and the caret goes on the indented
+     * line between them.
+     */
+    fun lineBreakAt(text: String, start: Int, end: Int = start): Pair<String, Int> {
+        val caret = start.coerceIn(0, text.length)
+        val currentLine = text.take(caret).substringAfterLast('\n')
+        val opening = currentLine.trimEnd().lastOrNull()
+        val closing = text.getOrNull(end.coerceIn(caret, text.length))
+
+        if (opening != null && closing != null && CLOSING_BRACKETS[opening] == closing &&
+            shouldIncreaseIndent(currentLine)
+        ) {
+            val baseIndent = getLineIndent(currentLine)
+            val inner = "\n" + calculateNewIndent(baseIndent, shouldIncrease = true)
+            return inner + "\n" + baseIndent to inner.length
+        }
+
+        val inserted = "\n" + indentForLineBreakAt(text, caret)
+        return inserted to inserted.length
+    }
+
     private fun getLineIndent(line: String): String {
         return line.takeWhile { it == ' ' || it == '\t' }
     }
@@ -77,8 +104,8 @@ class AutoIndentHandler(
     }
 
     private fun shouldIncreaseIndentKotlin(line: String): Boolean {
-        // Increase indent after opening braces
-        if (line.endsWith("{")) return true
+        // Increase indent after an opening bracket, as in `Column {` or `Column(`
+        if (line.endsWithOpeningBracket()) return true
 
         // Increase indent after = in expressions (but not in parameter lists)
         if (line.endsWith("=") && !line.contains("(")) return true
@@ -93,23 +120,31 @@ class AutoIndentHandler(
     }
 
     private fun shouldIncreaseIndentPython(line: String): Boolean {
-        // Increase indent after colon (def, class, if, for, while, try, etc.)
-        return line.endsWith(":")
+        // Increase indent after colon (def, class, if, for, while, try, etc.),
+        // and after an opening bracket
+        return line.endsWith(":") || line.endsWithOpeningBracket()
     }
 
     private fun shouldIncreaseIndentJava(line: String): Boolean {
-        // Increase indent after opening braces
-        return line.endsWith("{")
+        // Increase indent after an opening bracket
+        return line.endsWithOpeningBracket()
     }
 
     private fun shouldIncreaseIndentJavaScript(line: String): Boolean {
-        // Increase indent after opening braces
-        if (line.endsWith("{")) return true
+        // Increase indent after an opening bracket
+        if (line.endsWithOpeningBracket()) return true
 
         // Increase indent after => in arrow functions
         if (line.endsWith("=>")) return true
 
         return false
+    }
+
+    private fun String.endsWithOpeningBracket(): Boolean = lastOrNull()?.let { it in CLOSING_BRACKETS } == true
+
+    private companion object {
+        /** Each opening bracket and the bracket that closes it. */
+        val CLOSING_BRACKETS = mapOf('{' to '}', '(' to ')', '[' to ']')
     }
 
     private fun calculateNewIndent(baseIndent: String, shouldIncrease: Boolean): String {
