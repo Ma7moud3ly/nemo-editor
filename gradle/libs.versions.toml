@@ -1,8 +1,8 @@
 [versions]
 project-packageName = "io.ma7moud3ly.nemo"
 project-vendor = "github.com/Ma7moud3ly"
-project-versionCode = "6"
-project-versionName = "2.0.0"
+project-versionCode = "7"
+project-versionName = "2.0.1"
 java-version = "17"
 android-compileSdk = "37"
 android-targetSdk = "37"
